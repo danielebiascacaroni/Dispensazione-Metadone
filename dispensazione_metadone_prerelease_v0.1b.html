@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dispensazione Metadone — prerelease v0.1b</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{--bg:#f4f2ee;--surface:#fff;--surface2:#edeae4;--border:#d8d4cc;--text:#1a1916;--text2:#6b6760;--text3:#9e9a94;--accent:#2d6a4f;--accent2:#40916c;--danger:#c0392b;--warning:#e67e22;--info:#2980b9;--radius:14px;--radius-sm:8px;--shadow:0 2px 12px rgba(0,0,0,.08);--font:'DM Sans',sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent} body{margin:0;background:var(--bg);font-family:var(--font);color:var(--text)} .screen{display:none;min-height:100vh}.screen.active{display:block}.header{position:sticky;top:0;z-index:10;background:var(--accent);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.18)} .header h1{font-size:18px;margin:0;flex:1}.header small{display:block;opacity:.8;font-size:12px;font-weight:400}.content{padding:16px;max-width:1100px;margin:0 auto}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin:0 0 14px}.card h2,.card h3{margin:0 0 10px}.muted{color:var(--text2)} .tiny{font-size:12px;color:var(--text2)} .grid{display:grid;gap:12px}.grid-2{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}.grid-3{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.right{margin-left:auto}.pill{display:inline-block;padding:5px 10px;border-radius:999px;background:var(--surface2);font-size:12px}.pill.ok{background:#d8eddf;color:#2d6a4f}.pill.warn{background:#fef3e2;color:#a85d12}.pill.info{background:#ebf5fb;color:#1f5f8b}.pill.danger{background:#fdecea;color:#9d3023}.btn{appearance:none;border:none;background:var(--accent2);color:#fff;border-radius:12px;padding:12px 16px;font:600 14px var(--font);cursor:pointer}.btn.alt{background:#fff;color:var(--text);border:1px solid var(--border)}.btn.warn{background:var(--warning)}.btn.danger{background:var(--danger)}.btn.info{background:var(--info)} .btn:disabled{opacity:.55;cursor:not-allowed}.input,select,textarea{width:100%;padding:12px 13px;border:1px solid var(--border);border-radius:12px;background:#fff;font:500 14px var(--font);color:var(--text)} textarea{min-height:88px;resize:vertical}.label{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--text3);margin:0 0 6px}.list{display:grid;gap:10px}.item{padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff}.item:hover{border-color:#bdb7ae}.kpi{font-size:28px;font-weight:700}.table{width:100%;border-collapse:collapse;font-size:14px}.table th,.table td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}.hide{display:none!important}.signature-wrap{background:#fff;border:1px dashed var(--border);border-radius:12px;padding:8px}.signature{width:100%;height:180px;background:#fff;border-radius:8px;touch-action:none}.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#1f1f1f;color:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.24);font-size:14px;z-index:999;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}.split{display:grid;gap:14px;grid-template-columns:1.1fr .9fr}@media (max-width:860px){.split{grid-template-columns:1fr}.header h1{font-size:17px}}
+@media print{body{background:#fff}.header,.no-print,.toast{display:none!important}.screen{display:block!important;min-height:auto}.content{max-width:none;padding:0}.card{box-shadow:none;border:1px solid #ccc;break-inside:avoid}.print-only{display:block!important}}
+.print-only{display:none}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+
+<section id="screen-login" class="screen active">
+  <div class="header"><h1>Dispensazione Metadone<small>prerelease v0.1b</small></h1></div>
+  <div class="content" style="max-width:560px">
+    <div class="card">
+      <h2>Accesso operatore</h2>
+      <p class="muted">Seleziona operatore e inserisci PIN a 4 cifre. Dopo 5 minuti: blocco leggero. Dopo 30 minuti: reset forte.</p>
+      <div class="grid grid-2">
+        <div><div class="label">Operatore</div><select id="loginOperatore"></select></div>
+        <div><div class="label">PIN</div><input id="loginPin" class="input" type="password" inputmode="numeric" maxlength="5" placeholder="PIN"></div>
+      </div>
+      <div class="row" style="margin-top:14px"><button class="btn" onclick="login()">Entra</button><span id="firebaseStatus" class="pill info">Avvio…</span></div>
+    </div>
+    <div class="card">
+      <h3>Note prerelease</h3>
+      <ul class="muted">
+        <li>App separata, solo Metadone.</li>
+        <li>Operatori da collezione <code>operatori</code> se Firebase disponibile; altrimenti fallback locale demo.</li>
+        <li>Pazienti da collezione <code>pazienti_metadone</code> se presente; altrimenti archivio locale nel browser.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="screen-dashboard" class="screen">
+  <div class="header">
+    <button class="btn alt no-print" onclick="lockSoft()">🔒 Blocca</button>
+    <h1>Dashboard Metadone<small id="sessionInfo"></small></h1>
+    <button class="btn alt no-print" onclick="logout()">Esci</button>
+  </div>
+  <div class="content">
+    <div class="grid grid-3">
+      <div class="card"><div class="label">Pazienti attivi</div><div id="kpiPazienti" class="kpi">0</div></div>
+      <div class="card"><div class="label">Pronti per dispensazione</div><div id="kpiPronti" class="kpi">0</div></div>
+      <div class="card"><div class="label">Consegne oggi</div><div id="kpiOggi" class="kpi">0</div></div>
+    </div>
+
+    <div class="split">
+      <div>
+        <div class="card">
+          <div class="row"><h2 style="margin:0">Oggi</h2><span class="right tiny" id="oggiData"></span></div>
+          <div id="oggiList" class="list"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card no-print">
+          <h2>Nuovo protocollo</h2>
+          <div class="grid grid-2">
+            <div><div class="label">Paziente</div><select id="newProtocolPatient"></select></div>
+            <div><div class="label">Durata</div><select id="newProtocolDays"><option value="1">1 giorno</option><option value="3">3 giorni</option><option value="7" selected>7 giorni</option><option value="14">14 giorni</option></select></div>
+            <div><div class="label">Dal</div><input id="newProtocolStart" class="input" type="date"></div>
+            <div><div class="label">Al</div><input id="newProtocolEnd" class="input" type="date"></div>
+          </div>
+          <div class="row" style="margin-top:12px"><button class="btn" onclick="createProtocolFromDashboard()">Crea protocollo</button><button class="btn alt" onclick="syncEndDate()">Ricalcola fine</button></div>
+        </div>
+        <div class="card">
+          <div class="row"><h2 style="margin:0">Pazienti</h2><button class="btn alt no-print right" onclick="toggleNewPatient()">+ Paziente</button></div>
+          <div id="newPatientBox" class="hide" style="margin:12px 0 6px">
+            <div class="grid grid-2">
+              <div><div class="label">Nome</div><input id="pNome" class="input"></div>
+              <div><div class="label">Cognome</div><input id="pCognome" class="input"></div>
+              <div><div class="label">Data nascita</div><input id="pDdn" class="input" type="date"></div>
+              <div><div class="label">Telefono</div><input id="pTelefono" class="input"></div>
+              <div><div class="label">Medico curante</div><input id="pMedico" class="input"></div>
+              <div><div class="label">Giorno consegna abituale</div><select id="pGiorno"><option>Lunedì</option><option>Martedì</option><option>Mercoledì</option><option>Giovedì</option><option>Venerdì</option><option>Sabato</option><option>Domenica</option></select></div>
+              <div class="grid" style="grid-column:1/-1"><div><div class="label">Indirizzo / Note operative</div><textarea id="pNote"></textarea></div></div>
+            </div>
+            <div class="row" style="margin-top:10px"><button class="btn" onclick="saveNewPatient()">Salva paziente</button></div>
+          </div>
+          <div id="patientList" class="list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="screen-patient" class="screen">
+  <div class="header">
+    <button class="btn alt no-print" onclick="goDashboard()">←</button>
+    <h1 id="patientTitle">Scheda paziente</h1>
+    <button class="btn alt no-print" onclick="printPatientSummary()">Stampa scheda</button>
+  </div>
+  <div class="content">
+    <div class="split">
+      <div>
+        <div class="card"><div id="patientMeta"></div></div>
+        <div class="card no-print">
+          <h2>Nuovo protocollo di periodo</h2>
+          <div class="grid grid-2">
+            <div><div class="label">Dal</div><input id="protStart" class="input" type="date"></div>
+            <div><div class="label">Al</div><input id="protEnd" class="input" type="date"></div>
+            <div><div class="label">Farmaco / sostanza</div><input id="protDrug" class="input" value="Metadone"></div>
+            <div><div class="label">Forma farmaceutica</div><input id="protForm" class="input" placeholder="es. soluzione orale"></div>
+            <div><div class="label">Dose</div><input id="protDose" class="input" placeholder="es. 35 mg/die"></div>
+            <div><div class="label">Modalità prevista</div><select id="protMode"><option>Ritiro in farmacia</option><option>Delegato</option><option>Consegna esterna</option></select></div>
+            <div style="grid-column:1/-1"><div class="label">Eccezioni / note di periodo</div><textarea id="protNotes"></textarea></div>
+          </div>
+          <div class="row" style="margin-top:12px"><button class="btn" onclick="createProtocol()">Crea protocollo</button><button class="btn alt" onclick="proposeDatesForCurrentPatient()">Proponi periodo</button></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="row"><h2 style="margin:0">Storico protocolli</h2><span class="right tiny">firma unica per periodo</span></div>
+          <div id="protocolList" class="list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="screen-protocol" class="screen">
+  <div class="header">
+    <button class="btn alt no-print" onclick="backToPatient()">←</button>
+    <h1 id="protocolTitle">Protocollo</h1>
+    <button class="btn alt no-print" onclick="window.print()">Stampa</button>
+  </div>
+  <div class="content">
+    <div class="card print-only"><h2>Dispensazione Metadone — protocollo di periodo</h2></div>
+    <div class="card" id="protocolSummary"></div>
+
+    <div class="grid grid-3">
+      <div class="card"><h3>Preparazione</h3><div id="prepBox"></div></div>
+      <div class="card"><h3>Controllo</h3><div id="controlBox"></div></div>
+      <div class="card"><h3>Dispensazione</h3><div id="dispenseBox"></div></div>
+    </div>
+
+    <div class="card">
+      <h3>Giorni coperti</h3>
+      <div id="daysTable"></div>
+    </div>
+
+    <div class="card">
+      <div class="row"><h3 style="margin:0">Audit trail</h3><button class="btn alt no-print right" onclick="duplicateCurrentProtocol()">Duplica</button></div>
+      <div id="auditList" class="list"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+const FIREBASE_ENABLED = true;
+const firebaseConfig = {
+  apiKey:'AIzaSyD9McwYWAkmF7MY3twDfCu0ECU3WujYArc',
+  authDomain:'dosettes-farmacia.firebaseapp.com',
+  projectId:'dosettes-farmacia',
+  storageBucket:'dosettes-farmacia.firebasestorage.app',
+  messagingSenderId:'628957359401',
+  appId:'1:628957359401:web:7061c0a375b82288e45b38'
+};
+let firestoreDB = null;
+let USE_FIREBASE = false;
+try { if (FIREBASE_ENABLED) { firebase.initializeApp(firebaseConfig); firestoreDB = firebase.firestore(); USE_FIREBASE = true; } } catch(e){ console.warn(e); }
+
+const LS_KEY = 'metadone_prerelease_v0_1b';
+let APP = {
+  operatori:[
+    {sigla:'VA', nome:'Valentina', ruolo:'Farmacista', pin:'1111', pinPrep:'11111', attivo:true},
+    {sigla:'GL', nome:'Giulia Luna', ruolo:'Farmacista', pin:'2222', pinPrep:'22222', attivo:true},
+    {sigla:'MA', nome:'Martina', ruolo:'Assistente', pin:'3333', attivo:true},
+  ],
+  pazienti:[
+    {id:'PM001', nome:'Mario', cognome:'Rossi', ddn:'1980-01-01', telefono:'', indirizzo:'', medico:'Dr. Esempio', giornoConsegna:'Martedì', stato:'attiva', note:'Paziente demo', protocolli:[]}
+  ],
+  session:{locked:false, hardLocked:false, user:null, lastActivity:0},
+  currentPatientId:null,
+  currentProtocolId:null
+};
+
+function uid(prefix='ID'){ return prefix + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(iso){ if(!iso) return '—'; const d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('it-CH'); }
+function addDays(iso,n){ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function daysBetween(start,end){ const out=[]; let d=new Date(start+'T00:00:00'); const e=new Date(end+'T00:00:00'); while(d<=e){ out.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); } return out; }
+function weekdayIt(iso){ return new Date(iso+'T00:00:00').toLocaleDateString('it-CH',{weekday:'long'}); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window._toastT); window._toastT=setTimeout(()=>t.classList.remove('show'),2200); }
+function saveLocal(){ localStorage.setItem(LS_KEY, JSON.stringify(APP)); }
+function loadLocal(){ const raw=localStorage.getItem(LS_KEY); if(raw){ try{ const parsed=JSON.parse(raw); APP={...APP,...parsed}; }catch(e){} } }
+function getPatient(id){ return APP.pazienti.find(p=>p.id===id); }
+function getCurrentPatient(){ return getPatient(APP.currentPatientId); }
+function getProtocolById(pid){ for(const p of APP.pazienti){ const pr=(p.protocolli||[]).find(x=>x.id===pid); if(pr) return {patient:p, protocol:pr}; } return null; }
+function addAudit(pr, action, detail=''){ pr.audit=pr.audit||[]; pr.audit.unshift({ts:new Date().toISOString(), by:APP.session.user?APP.session.user.sigla:'SYS', action, detail}); }
+
+async function init(){
+  loadLocal();
+  bindActivity();
+  await loadRemoteMaybe();
+  populateLogin();
+  refreshAll();
+  setInterval(checkTimeouts, 10000);
+}
+
+async function loadRemoteMaybe(){
+  const fb = document.getElementById('firebaseStatus');
+  if(!USE_FIREBASE){ fb.textContent='Solo locale'; return; }
+  try{
+    const opSnap = await firestoreDB.collection('operatori').get();
+    const ops=[]; opSnap.forEach(doc=>{ const d=doc.data(); if(d.attivo!==false) ops.push({sigla:d.sigla||doc.id, nome:d.nome||doc.id, ruolo:d.ruolo||'', pinHash:d.pinHash||null, pin:d.pin||null, pinPrep:d.pinPrep||null, attivo:true}); });
+    if(ops.length) APP.operatori = ops;
+    const pSnap = await firestoreDB.collection('pazienti_metadone').get();
+    const pats=[]; pSnap.forEach(doc=>{ const d=doc.data(); pats.push({...d,id:d.id||doc.id, protocolli:d.protocolli||[]}); });
+    if(pats.length) APP.pazienti = pats;
+    fb.textContent='Firebase attivo'; fb.className='pill ok';
+  }catch(e){ fb.textContent='Fallback locale'; fb.className='pill warn'; console.warn(e); }
+  saveLocal();
+}
+
+async function persistPatient(patient){ saveLocal(); if(!USE_FIREBASE) return; try{ await firestoreDB.collection('pazienti_metadone').doc(patient.id).set(patient); }catch(e){ console.warn('Persist remoto fallito', e); } }
+
+function populateLogin(){
+  const sel=document.getElementById('loginOperatore'); sel.innerHTML='';
+  APP.operatori.filter(o=>o.attivo!==false).forEach(op=>{ const opt=document.createElement('option'); opt.value=op.sigla; opt.textContent=op.nome+' ('+op.sigla+')'; sel.appendChild(opt); });
+}
+
+async function login(){
+  const sigla=document.getElementById('loginOperatore').value; const pin=document.getElementById('loginPin').value.trim();
+  const op=APP.operatori.find(x=>x.sigla===sigla);
+  if(!op) return toast('Operatore non trovato');
+  let ok = false;
+  if(op.pinHash && window.crypto?.subtle){
+    const enc = new TextEncoder().encode(pin); const hashBuffer = await crypto.subtle.digest('SHA-256', enc); const hashArr=Array.from(new Uint8Array(hashBuffer)); const hex=hashArr.map(b=>b.toString(16).padStart(2,'0')).join(''); ok = (hex===op.pinHash);
+  } else {
+    ok = (pin === String(op.pin||''));
+  }
+  if(!ok) return toast('PIN non valido');
+  APP.session={locked:false, hardLocked:false, user:op, lastActivity:Date.now()};
+  document.getElementById('loginPin').value='';
+  show('screen-dashboard'); refreshAll();
+}
+function logout(){ APP.session={locked:false, hardLocked:false, user:null, lastActivity:0}; show('screen-login'); }
+function lockSoft(){ APP.session.locked=true; toast('Sessione bloccata'); show('screen-login'); }
+function checkTimeouts(){ if(!APP.session.user) return; const idle = Date.now() - (APP.session.lastActivity||0); if(idle > 30*60*1000){ APP.session={locked:false, hardLocked:true, user:null, lastActivity:0}; toast('Sessione scaduta'); show('screen-login'); return; } if(idle > 5*60*1000 && !APP.session.locked){ APP.session.locked=true; toast('Reinserire PIN'); show('screen-login'); } }
+function bindActivity(){ ['click','keydown','touchstart','mousemove'].forEach(ev=>document.addEventListener(ev, ()=>{ if(APP.session.user) APP.session.lastActivity=Date.now(); }, {passive:true})); }
+
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function refreshAll(){ renderDashboard(); if(APP.currentPatientId) renderPatient(); if(APP.currentProtocolId) renderProtocol(); }
+
+function renderDashboard(){
+  document.getElementById('sessionInfo').textContent = APP.session.user ? (APP.session.user.nome+' · '+APP.session.user.ruolo) : '';
+  document.getElementById('oggiData').textContent = new Date().toLocaleDateString('it-CH',{weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  const pats = APP.pazienti.filter(p=>p.stato!=='non attiva');
+  let pronti=0, oggi=0;
+  const oggiIso=todayISO();
+  const items=[];
+  pats.forEach(p=> (p.protocolli||[]).forEach(pr=>{ if(pr.status==='controllato') pronti++; if(pr.startDate<=oggiIso && pr.endDate>=oggiIso) oggi++; if(pr.startDate<=oggiIso && pr.endDate>=oggiIso){ items.push({p, pr}); } }));
+  document.getElementById('kpiPazienti').textContent = pats.length; document.getElementById('kpiPronti').textContent = pronti; document.getElementById('kpiOggi').textContent = oggi;
+  const oggiList=document.getElementById('oggiList'); oggiList.innerHTML='';
+  if(!items.length) oggiList.innerHTML='<div class="item muted">Nessun protocollo attivo oggi.</div>';
+  items.sort((a,b)=>a.p.cognome.localeCompare(b.p.cognome));
+  items.forEach(({p,pr})=>{ const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="row"><strong>${p.cognome} ${p.nome}</strong><span class="pill ${statusClass(pr.status)}">${statusLabel(pr.status)}</span></div><div class="tiny">Periodo ${fmtDate(pr.startDate)} → ${fmtDate(pr.endDate)} · ${pr.dose||'dose n/d'}</div><div class="row" style="margin-top:8px"><button class="btn alt" onclick="openPatient('${p.id}')">Scheda</button><button class="btn" onclick="openProtocol('${pr.id}')">Apri protocollo</button></div>`; oggiList.appendChild(div); });
+  const psel=document.getElementById('newProtocolPatient'); psel.innerHTML=''; pats.forEach(p=>{ const opt=document.createElement('option'); opt.value=p.id; opt.textContent=p.cognome+' '+p.nome; psel.appendChild(opt); });
+  document.getElementById('newProtocolStart').value=todayISO(); syncEndDate();
+  const pl=document.getElementById('patientList'); pl.innerHTML='';
+  pats.sort((a,b)=>a.cognome.localeCompare(b.cognome));
+  pats.forEach(p=>{ const active = (p.protocolli||[]).filter(pr=>pr.status!=='dispensato').length; const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="row"><strong>${p.cognome} ${p.nome}</strong><span class="right tiny">${p.giornoConsegna||'—'}</span></div><div class="tiny">${p.medico||'—'} · protocolli aperti: ${active}</div><div class="row" style="margin-top:8px"><button class="btn alt" onclick="openPatient('${p.id}')">Apri scheda</button></div>`; pl.appendChild(div); });
+}
+function toggleNewPatient(){ document.getElementById('newPatientBox').classList.toggle('hide'); }
+async function saveNewPatient(){ const p={ id:uid('PM'), nome:v('pNome'), cognome:v('pCognome'), ddn:v('pDdn'), telefono:v('pTelefono'), indirizzo:'', medico:v('pMedico'), giornoConsegna:v('pGiorno'), stato:'attiva', note:v('pNote'), protocolli:[] }; if(!p.nome||!p.cognome) return toast('Nome e cognome obbligatori'); APP.pazienti.push(p); await persistPatient(p); ['pNome','pCognome','pDdn','pTelefono','pMedico','pNote'].forEach(id=>document.getElementById(id).value=''); refreshAll(); toast('Paziente salvato'); }
+function syncEndDate(){ const s=v('newProtocolStart')||todayISO(); const d=parseInt(v('newProtocolDays')||'7',10); document.getElementById('newProtocolEnd').value = addDays(s, d-1); }
+async function createProtocolFromDashboard(){ const pid=v('newProtocolPatient'); openPatient(pid); document.getElementById('protStart').value=v('newProtocolStart'); document.getElementById('protEnd').value=v('newProtocolEnd'); document.getElementById('protDose').focus(); }
+
+function openPatient(id){ APP.currentPatientId=id; show('screen-patient'); renderPatient(); }
+function goDashboard(){ show('screen-dashboard'); renderDashboard(); }
+function backToPatient(){ show('screen-patient'); renderPatient(); }
+function proposeDatesForCurrentPatient(){ const p=getCurrentPatient(); if(!p) return; const last=(p.protocolli||[])[0]; let start=todayISO(); if(last && last.endDate) start = addDays(last.endDate,1); document.getElementById('protStart').value=start; document.getElementById('protEnd').value=addDays(start,6); }
+function renderPatient(){ const p=getCurrentPatient(); if(!p) return goDashboard(); document.getElementById('patientTitle').textContent = p.cognome+' '+p.nome; document.getElementById('patientMeta').innerHTML = `<div class="grid grid-2"><div><div class="label">Data nascita</div><div>${fmtDate(p.ddn)}</div></div><div><div class="label">Telefono</div><div>${p.telefono||'—'}</div></div><div><div class="label">Medico curante</div><div>${p.medico||'—'}</div></div><div><div class="label">Giorno consegna abituale</div><div>${p.giornoConsegna||'—'}</div></div><div style="grid-column:1/-1"><div class="label">Note operative</div><div>${escapeHtml(p.note||'—')}</div></div></div>`;
+  proposeDatesForCurrentPatient();
+  const list=document.getElementById('protocolList'); list.innerHTML='';
+  const arr=(p.protocolli||[]).slice().sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+  if(!arr.length) list.innerHTML='<div class="item muted">Nessun protocollo registrato.</div>';
+  arr.forEach(pr=>{ const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="row"><strong>${fmtDate(pr.startDate)} → ${fmtDate(pr.endDate)}</strong><span class="pill ${statusClass(pr.status)}">${statusLabel(pr.status)}</span></div><div class="tiny">${pr.drug||'Metadone'} · ${pr.form||'—'} · ${pr.dose||'—'}</div><div class="row" style="margin-top:8px"><button class="btn" onclick="openProtocol('${pr.id}')">Apri</button></div>`; list.appendChild(div); });
+}
+async function createProtocol(){ const p=getCurrentPatient(); if(!p) return; const s=v('protStart'), e=v('protEnd'); if(!s||!e||e<s) return toast('Periodo non valido'); const pr={ id:uid('PR'), createdAt:new Date().toISOString(), startDate:s, endDate:e, drug:v('protDrug')||'Metadone', form:v('protForm'), dose:v('protDose'), mode:v('protMode'), notes:v('protNotes'), status:'bozza', days:daysBetween(s,e).map(d=>({date:d, weekday:weekdayIt(d), dispensed:false})), preparation:{done:false, checklist:{farmaco:false,dose:false,periodo:false,contenitore:false}, by:null, at:null, pinLevel:'5', signatureName:null}, control:{done:false, by:null, at:null, esito:''}, dispense:{done:false, by:null, at:null, receiverName:'', receiverRole:'Paziente', signatureDataUrl:'', note:'', mode:v('protMode')}, audit:[] };
+  addAudit(pr,'Creazione protocollo', `${fmtDate(s)} → ${fmtDate(e)}`);
+  p.protocolli = p.protocolli || []; p.protocolli.unshift(pr); await persistPatient(p); APP.currentProtocolId = pr.id; show('screen-protocol'); renderProtocol(); toast('Protocollo creato'); }
+
+function openProtocol(id){ APP.currentProtocolId=id; show('screen-protocol'); renderProtocol(); }
+function statusLabel(s){ return ({bozza:'Bozza', preparato:'Preparato', controllato:'Controllato', dispensato:'Dispensato'})[s]||s; }
+function statusClass(s){ return ({bozza:'warn', preparato:'info', controllato:'ok', dispensato:'ok'})[s]||'warn'; }
+function renderProtocol(){ const found=getProtocolById(APP.currentProtocolId); if(!found) return backToPatient(); const {patient:p, protocol:pr}=found; APP.currentPatientId=p.id;
+  document.getElementById('protocolTitle').textContent = `${p.cognome} ${p.nome}`;
+  document.getElementById('protocolSummary').innerHTML = `
+    <div class="row"><h2 style="margin:0">Protocollo di periodo</h2><span class="pill ${statusClass(pr.status)}">${statusLabel(pr.status)}</span></div>
+    <div class="grid grid-3" style="margin-top:10px">
+      <div><div class="label">Periodo</div><div>${fmtDate(pr.startDate)} → ${fmtDate(pr.endDate)}</div></div>
+      <div><div class="label">Dose</div><div>${escapeHtml(pr.dose||'—')}</div></div>
+      <div><div class="label">Modalità</div><div>${escapeHtml(pr.mode||'—')}</div></div>
+      <div><div class="label">Paziente</div><div>${escapeHtml(p.cognome+' '+p.nome)}</div></div>
+      <div><div class="label">Medico</div><div>${escapeHtml(p.medico||'—')}</div></div>
+      <div><div class="label">Giorno abituale</div><div>${escapeHtml(p.giornoConsegna||'—')}</div></div>
+      <div style="grid-column:1/-1"><div class="label">Note periodo</div><div>${escapeHtml(pr.notes||'—')}</div></div>
+    </div>`;
+
+  document.getElementById('prepBox').innerHTML = `
+    <div class="tiny">Preparatore con PIN firma dedicato; nella prerelease è accettato anche il fallback definito sull'operatore.</div>
+    <label><input type="checkbox" id="ckFarmaco" ${pr.preparation.checklist.farmaco?'checked':''}> Farmaco corretto</label><br>
+    <label><input type="checkbox" id="ckDose" ${pr.preparation.checklist.dose?'checked':''}> Dose corretta</label><br>
+    <label><input type="checkbox" id="ckPeriodo" ${pr.preparation.checklist.periodo?'checked':''}> Periodo corretto</label><br>
+    <label><input type="checkbox" id="ckCont" ${pr.preparation.checklist.contenitore?'checked':''}> Contenitore / materiale corretto</label>
+    <div class="grid" style="margin-top:10px"><div><div class="label">PIN preparatore</div><input id="prepPin" class="input" type="password" maxlength="5" inputmode="numeric"></div></div>
+    <div class="row" style="margin-top:10px"><button class="btn" ${pr.preparation.done?'disabled':''} onclick="confirmPreparation()">Conferma preparazione</button></div>
+    <div class="tiny" style="margin-top:8px">${pr.preparation.done ? `Eseguita da ${pr.preparation.by} il ${new Date(pr.preparation.at).toLocaleString('it-CH')}` : 'Non ancora eseguita'}</div>`;
+
+  document.getElementById('controlBox').innerHTML = `
+    <div class="tiny">Chi prepara non può controllare lo stesso protocollo.</div>
+    <div class="grid"><div><div class="label">Esito / nota controllo</div><textarea id="controlNote">${escapeAttr(pr.control.esito||'')}</textarea></div></div>
+    <div class="row" style="margin-top:10px"><button class="btn info" ${!pr.preparation.done||pr.control.done?'disabled':''} onclick="confirmControl()">Conferma controllo</button></div>
+    <div class="tiny" style="margin-top:8px">${pr.control.done ? `Controllato da ${pr.control.by} il ${new Date(pr.control.at).toLocaleString('it-CH')}` : 'Non ancora controllato'}</div>`;
+
+  document.getElementById('dispenseBox').innerHTML = `
+    <div class="grid">
+      <div><div class="label">Modalità effettiva</div><select id="dispMode"><option ${sel(pr.dispense.mode,'Ritiro in farmacia')}>Ritiro in farmacia</option><option ${sel(pr.dispense.mode,'Delegato')}>Delegato</option><option ${sel(pr.dispense.mode,'Consegna esterna')}>Consegna esterna</option></select></div>
+      <div><div class="label">Ricevente</div><input id="receiverName" class="input" value="${escapeAttr(pr.dispense.receiverName||'')}"></div>
+      <div><div class="label">Qualità del ricevente</div><select id="receiverRole"><option ${sel(pr.dispense.receiverRole,'Paziente')}>Paziente</option><option ${sel(pr.dispense.receiverRole,'Delegato')}>Delegato</option></select></div>
+      <div><div class="label">Nota dispensazione</div><textarea id="dispNote">${escapeAttr(pr.dispense.note||'')}</textarea></div>
+    </div>
+    <div class="signature-wrap" style="margin-top:10px">
+      <div class="label">Firma unica del ricevente per il periodo</div>
+      <canvas id="sigCanvas" class="signature"></canvas>
+      <div class="row" style="margin-top:8px"><button class="btn alt no-print" onclick="clearSignature()">Pulisci firma</button><button class="btn warn" ${!pr.control.done||pr.dispense.done?'disabled':''} onclick="confirmDispense()">Chiudi dispensazione</button></div>
+    </div>
+    <div class="tiny" style="margin-top:8px">${pr.dispense.done ? `Dispensato da ${pr.dispense.by} il ${new Date(pr.dispense.at).toLocaleString('it-CH')}` : 'Non ancora dispensato'}</div>`;
+
+  const daysHtml = `<table class="table"><thead><tr><th>Data</th><th>Giorno</th><th>Coperto dal periodo</th></tr></thead><tbody>${pr.days.map(d=>`<tr><td>${fmtDate(d.date)}</td><td>${capitalize(d.weekday)}</td><td>✔</td></tr>`).join('')}</tbody></table>`;
+  document.getElementById('daysTable').innerHTML = daysHtml;
+  const audit = document.getElementById('auditList'); audit.innerHTML=''; (pr.audit||[]).forEach(a=>{ const div=document.createElement('div'); div.className='item'; div.innerHTML=`<strong>${a.action}</strong><div class="tiny">${new Date(a.ts).toLocaleString('it-CH')} · ${a.by}</div><div class="tiny">${escapeHtml(a.detail||'')}</div>`; audit.appendChild(div); });
+  bindSignature(pr);
+}
+
+async function confirmPreparation(){ const found=getProtocolById(APP.currentProtocolId); const {patient:p, protocol:pr}=found; const op=APP.session.user; if(!op) return toast('Sessione non valida'); const pin=v('prepPin'); const allowed = [String(op.pinPrep||''), String(op.pin||'')].filter(Boolean); if(!allowed.includes(pin)) return toast('PIN preparatore non valido'); pr.preparation.checklist = {farmaco:checked('ckFarmaco'), dose:checked('ckDose'), periodo:checked('ckPeriodo'), contenitore:checked('ckCont')}; if(!Object.values(pr.preparation.checklist).every(Boolean)) return toast('Checklist incompleta'); pr.preparation.done=true; pr.preparation.by=op.sigla; pr.preparation.at=new Date().toISOString(); pr.preparation.signatureName=op.nome; pr.status='preparato'; addAudit(pr,'Preparazione confermata', op.nome); await persistPatient(p); renderProtocol(); renderDashboard(); toast('Preparazione registrata'); }
+async function confirmControl(){ const found=getProtocolById(APP.currentProtocolId); const {patient:p, protocol:pr}=found; const op=APP.session.user; if(!op) return toast('Sessione non valida'); if(pr.preparation.by===op.sigla) return toast('Chi prepara non può controllare'); pr.control.done=true; pr.control.by=op.sigla; pr.control.at=new Date().toISOString(); pr.control.esito=v('controlNote'); pr.status='controllato'; addAudit(pr,'Controllo confermato', pr.control.esito||'OK'); await persistPatient(p); renderProtocol(); renderDashboard(); toast('Controllo registrato'); }
+async function confirmDispense(){ const found=getProtocolById(APP.currentProtocolId); const {patient:p, protocol:pr}=found; const op=APP.session.user; if(!op) return toast('Sessione non valida'); const sig = getSignatureData(); if(!sig) return toast('Firma ricevente mancante'); pr.dispense.done=true; pr.dispense.by=op.sigla; pr.dispense.at=new Date().toISOString(); pr.dispense.mode=v('dispMode'); pr.dispense.receiverName=v('receiverName'); pr.dispense.receiverRole=v('receiverRole'); pr.dispense.note=v('dispNote'); pr.dispense.signatureDataUrl=sig; pr.status='dispensato'; pr.days = pr.days.map(d=>({...d, dispensed:true})); addAudit(pr,'Dispensazione chiusa', `${pr.dispense.receiverRole}: ${pr.dispense.receiverName||'n/d'}`); await persistPatient(p); renderProtocol(); renderDashboard(); toast('Dispensazione registrata'); }
+async function duplicateCurrentProtocol(){ const found=getProtocolById(APP.currentProtocolId); const {patient:p, protocol:pr}=found; const dup = JSON.parse(JSON.stringify(pr)); dup.id=uid('PR'); dup.createdAt=new Date().toISOString(); dup.startDate=addDays(pr.endDate,1); dup.endDate=addDays(dup.startDate, pr.days.length-1); dup.days=daysBetween(dup.startDate, dup.endDate).map(d=>({date:d, weekday:weekdayIt(d), dispensed:false})); dup.status='bozza'; dup.preparation={done:false, checklist:{farmaco:false,dose:false,periodo:false,contenitore:false}, by:null, at:null, pinLevel:'5', signatureName:null}; dup.control={done:false, by:null, at:null, esito:''}; dup.dispense={done:false, by:null, at:null, receiverName:'', receiverRole:'Paziente', signatureDataUrl:'', note:'', mode:pr.mode}; dup.audit=[]; addAudit(dup,'Duplicazione protocollo', `da ${pr.id}`); p.protocolli.unshift(dup); await persistPatient(p); APP.currentProtocolId=dup.id; renderPatient(); show('screen-protocol'); renderProtocol(); toast('Protocollo duplicato'); }
+
+function printPatientSummary(){ window.print(); }
+function v(id){ return document.getElementById(id).value.trim(); }
+function checked(id){ return document.getElementById(id).checked; }
+function sel(a,b){ return a===b?'selected':''; }
+function capitalize(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ''; }
+function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+function escapeAttr(s){ return escapeHtml(s).replace(/\n/g,'&#10;'); }
+
+let sigPad=null;
+function bindSignature(pr){ const canvas=document.getElementById('sigCanvas'); if(!canvas) return; const ratio=window.devicePixelRatio||1; const rect=canvas.getBoundingClientRect(); canvas.width=rect.width*ratio; canvas.height=rect.height*ratio; const ctx=canvas.getContext('2d'); ctx.scale(ratio,ratio); ctx.lineWidth=2; ctx.lineCap='round'; ctx.strokeStyle='#111'; ctx.clearRect(0,0,rect.width,rect.height); if(pr.dispense.signatureDataUrl){ const img=new Image(); img.onload=()=>ctx.drawImage(img,0,0,rect.width,rect.height); img.src=pr.dispense.signatureDataUrl; }
+  let drawing=false, moved=false;
+  const pos=e=>{ const r=canvas.getBoundingClientRect(); const t=e.touches?e.touches[0]:e; return {x:t.clientX-r.left,y:t.clientY-r.top}; };
+  const start=e=>{ drawing=true; moved=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault(); };
+  const move=e=>{ if(!drawing) return; const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); };
+  const end=e=>{ drawing=false; e && e.preventDefault(); };
+  canvas.onmousedown=start; canvas.onmousemove=move; window.onmouseup=end; canvas.ontouchstart=start; canvas.ontouchmove=move; canvas.ontouchend=end;
+  sigPad={canvas, ctx, moved};
+}
+function clearSignature(){ const canvas=document.getElementById('sigCanvas'); if(!canvas) return; const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); canvas.dataset.empty='1'; }
+function getSignatureData(){ const canvas=document.getElementById('sigCanvas'); if(!canvas) return ''; return canvas.toDataURL('image/png'); }
+
+document.addEventListener('change', function(e){ if(['newProtocolDays','newProtocolStart'].includes(e.target.id)) syncEndDate(); });
+window.addEventListener('resize', ()=>{ if(APP.currentProtocolId && document.getElementById('screen-protocol').classList.contains('active')) renderProtocol(); });
+init();
+</script>
+</body>
+</html>
