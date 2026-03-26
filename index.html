@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Dispensazione Metadone – Farmacia Ascona</title>
+<title>Terapie Sostitutive – Farmacia Ascona</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
@@ -297,7 +298,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 <div id="screen-login" class="screen active" style="background:var(--accent-dark)">
   <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px 24px;gap:6px">
     <div style="font-size:40px">💊</div>
-    <div style="font-size:20px;font-weight:700;color:white;letter-spacing:-0.3px">Dispensazione Metadone</div>
+    <div style="font-size:20px;font-weight:700;color:white;letter-spacing:-0.3px">Terapie Sostitutive</div>
     <div style="font-size:13px;color:rgba(255,255,255,0.6)">Farmacia Ascona</div>
   </div>
   <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 24px">
@@ -336,7 +337,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 ═══════════════════════════════════════ -->
 <div id="screen-dashboard" class="screen">
   <div class="logo-header">
-    <div class="logo-name">💊 Dispensazione Metadone</div>
+    <div class="logo-name">💊 Terapie Sostitutive</div>
     <div class="logo-sub">Farmacia Ascona</div>
     <div class="logo-date" id="header-date"></div>
   </div>
@@ -912,6 +913,12 @@ if (FIREBASE_ENABLED) {
   try {
     firebase.initializeApp(firebaseConfig);
     firestoreDB = firebase.firestore();
+    // ── Fase 1.5: autenticazione anonima Firebase ──
+    // Necessaria per le Security Rules "request.auth != null".
+    // Non identifica l'utente — serve solo a bloccare accessi HTTP diretti non autenticati.
+    firebase.auth().signInAnonymously().catch(function(e){
+      console.warn('Firebase anonymous auth fallita:', e.code);
+    });
   } catch(e) {
     console.error('Errore init Firebase:', e.message);
     FIREBASE_ENABLED = false;
