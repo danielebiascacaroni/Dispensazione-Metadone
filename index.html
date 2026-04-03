@@ -914,10 +914,9 @@ if (FIREBASE_ENABLED) {
     firebase.initializeApp(firebaseConfig);
     firestoreDB = firebase.firestore();
     // ── Fase 1.5: autenticazione anonima Firebase ──
-    // Necessaria per le Security Rules "request.auth != null".
-    // Non identifica l'utente — serve solo a bloccare accessi HTTP diretti non autenticati.
-    firebase.auth().signInAnonymously().catch(function(e){
-      console.warn('Firebase anonymous auth fallita:', e.code);
+    // Autenticazione con account dedicato per Security Rules.
+    firebase.auth().signInWithEmailAndPassword('farmacia.ascona@gmail.com','7917139Dbc').catch(function(e){
+      console.warn('Firebase auth fallita:', e.code);
     });
   } catch(e) {
     console.error('Errore init Firebase:', e.message);
