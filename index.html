@@ -595,6 +595,22 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 
     <div class="form-row">
       <div class="form-group">
+        <label class="form-label">Giorni pausa/sett. (0–3)</label>
+        <select class="form-select" id="prep-pausa" onchange="aggiornaQtaTotale()">
+          <option value="0">0 — nessuna pausa</option>
+          <option value="1">1 giorno</option>
+          <option value="2">2 giorni</option>
+          <option value="3">3 giorni</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">mg/settimana</label>
+        <input type="text" class="form-input" id="prep-mg-sett" placeholder="—" style="background:var(--surface2)" readonly>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
         <label class="form-label">N° giorni *</label>
         <input type="number" class="form-input" id="prep-ngiorni" min="1" max="31" value="7" oninput="aggiornaAlDaPeriodo();aggiornaQtaTotale()">
       </div>
@@ -2358,6 +2374,7 @@ function showNuovaPrep() {
   document.getElementById('prep-farmaco').value = (p.terapia&&p.terapia.farmaco)||'Metadone Streuli 10 mg/ml';
   document.getElementById('prep-forma').value   = (p.terapia&&p.terapia.forma)||'Soluzione orale';
   document.getElementById('prep-dose').value    = (p.terapia&&p.terapia.dose)||'';
+  document.getElementById('prep-pausa').value   = (p.terapia&&p.terapia.pausa!==undefined) ? p.terapia.pausa : 0;
   document.getElementById('prep-lotto').value   = '';
   document.getElementById('prep-note').value    = '';
   aggiornaQtaTotale();
@@ -2373,9 +2390,14 @@ function showNuovaPrep() {
 }
 
 function aggiornaQtaTotale() {
-  var dose = parseFloat(document.getElementById('prep-dose').value)||0;
-  var ng   = parseInt(document.getElementById('prep-ngiorni').value)||0;
-  document.getElementById('prep-qta').value = dose&&ng ? (dose*ng)+' mg' : '';
+  var dose  = parseFloat(document.getElementById('prep-dose').value)||0;
+  var ng    = parseInt(document.getElementById('prep-ngiorni').value)||0;
+  var pausa = parseInt(document.getElementById('prep-pausa').value)||0;
+  var mgSett = dose > 0 ? dose * (7 - pausa) : 0;
+  var elMs = document.getElementById('prep-mg-sett');
+  if (elMs) elMs.value = mgSett > 0 ? mgSett.toFixed(0) + ' mg' : '—';
+  var qtaTot = (mgSett > 0 && ng > 0) ? Math.round(mgSett * ng / 7) + ' mg' : '';
+  document.getElementById('prep-qta').value = qtaTot;
   aggiornaPrepGiorniGrid();
 }
 function aggiornaAlDaPeriodo() {
@@ -2505,7 +2527,10 @@ function salvaPreparazione() {
   var dal    = document.getElementById('prep-dal').value;
   var al     = document.getElementById('prep-al').value;
   var dose   = parseFloat(document.getElementById('prep-dose').value)||0;
+  var pausa  = parseInt(document.getElementById('prep-pausa').value)||0;
   var ng     = calcolaGiorniCoperti(dal,al).length;
+  var mgSett = dose * (7 - pausa);
+  var qtaTot = Math.round(mgSett * ng / 7);
 
   var pr = {
     id: genId('PROT'),
@@ -2517,7 +2542,9 @@ function salvaPreparazione() {
     farmaco:       document.getElementById('prep-farmaco').value.trim(),
     forma:         document.getElementById('prep-forma').value.trim(),
     dose:          dose,
-    qtaTotale:     dose*ng,
+    pausa:         pausa,
+    mgSettimana:   mgSett,
+    qtaTotale:     qtaTot,
     lotto:         document.getElementById('prep-lotto').value.trim(),
     note:          document.getElementById('prep-note').value.trim(),
     stato:         'preparato',
@@ -2525,20 +2552,40 @@ function salvaPreparazione() {
     controllore:   null,
     dispensazione: null,
     fotoUrl:       null,
-    auditTrail:    [{ tipo:'creazione', op:_firmaPreparatore.sigla, ts:nowStr(), dettaglio:'Preparazione creata ('+dose+'mg/die × '+ng+'gg = '+dose*ng+'mg tot.)' }]
+    auditTrail:    [{ tipo:'creazione', op:_firmaPreparatore.sigla, ts:nowStr(), dettaglio:'Preparazione creata ('+dose+' mg/die × (7−'+pausa+') × '+ng+'/7 gg = '+qtaTot+' mg tot.)' }]
   };
 
   DB.protocolli.push(pr);
   sincronizzaProtocollo(pr);
 
   var fotoData = _fotoPrep ? _fotoPrep.data : null;
+  var firmaPrep = _firmaPreparatore;
   _firmaPreparatore = null;
   _fotoPrep = null;
 
-  showToast('Preparazione salvata ✓','success');
-  openPaziente(p.id);
+  // Modal di conferma con riepilogo
+  var pazId = p.id;
+  mostraModal(
+    '<div style="text-align:center;padding:8px 0 16px">' +
+    '<div style="font-size:48px;margin-bottom:8px">✅</div>' +
+    '<div style="font-size:20px;font-weight:700;color:var(--accent-dark);margin-bottom:4px">Preparazione pronta per la consegna</div>' +
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:20px">' + escHtml(p.cognome + ' ' + p.nome) + '</div>' +
+    '</div>' +
+    '<div class="info-row"><span class="info-key">Farmaco</span><span class="info-val">' + escHtml(pr.farmaco) + '</span></div>' +
+    '<div class="info-row"><span class="info-key">Dose giornaliera</span><span class="info-val" style="font-family:var(--mono)">' + dose + ' mg/die</span></div>' +
+    (pausa > 0 ? '<div class="info-row"><span class="info-key">Pausa</span><span class="info-val" style="font-family:var(--mono)">' + pausa + ' giorno/i per sett.</span></div>' : '') +
+    '<div class="info-row"><span class="info-key">mg/settimana</span><span class="info-val" style="font-family:var(--mono)">' + mgSett + ' mg</span></div>' +
+    '<div class="info-row"><span class="info-key">Periodo</span><span class="info-val" style="font-family:var(--mono)">' + formatDate(dal) + ' – ' + formatDate(al) + '</span></div>' +
+    '<div class="info-row"><span class="info-key">Durata</span><span class="info-val" style="font-family:var(--mono)">' + ng + ' giorni</span></div>' +
+    '<div class="info-row"><span class="info-key">Qtà totale preparata</span><span class="info-val" style="font-family:var(--mono);font-weight:700;color:var(--accent-dark)">' + qtaTot + ' mg</span></div>' +
+    '<div class="info-row"><span class="info-key">Lotto</span><span class="info-val" style="font-family:var(--mono)">' + escHtml(pr.lotto) + '</span></div>' +
+    '<div class="info-row"><span class="info-key">Preparatore</span><span class="info-val">' + escHtml(firmaPrep.nome + ' (' + firmaPrep.sigla + ')') + '</span></div>' +
+    '<div style="margin-top:20px">' +
+    '<button class="btn btn-primary btn-full" onclick="chiudiModal();openPaziente(\'' + pazId + '\')">OK — Torna alla scheda paziente</button>' +
+    '</div>'
+  );
 
-  // Upload foto in background dopo aver già navigato
+  // Upload foto in background dopo aver già salvato
   if (fotoData) {
     var tentativo = 0;
     function tentaUpload() {
