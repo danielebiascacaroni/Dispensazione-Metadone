@@ -8,6 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
@@ -58,10 +59,43 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 .content { padding: 20px; flex: 1; overflow-y: auto; }
 
 /* ── LOGO HEADER ── */
-.logo-header { background: var(--accent-dark); padding: 28px 24px 20px; color: white; }
-.logo-name { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-.logo-sub { font-size: 13px; opacity: 0.7; margin-top: 2px; }
-.logo-date { font-size: 12px; opacity: 0.6; margin-top: 8px; font-family: var(--mono); }
+.logo-header { background: var(--accent-dark); padding: calc(18px + var(--safe-top, 0px)) 24px 18px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 18px; color: white; }
+.logo-header-img { height: 50px; width: auto; filter: brightness(0) invert(1); flex-shrink: 0; object-fit: contain; }
+.logo-header-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.25); flex-shrink: 0; }
+.logo-header-text { text-align: center; }
+.logo-name { font-size: 19px; font-weight: 700; letter-spacing: -0.2px; line-height: 1.2; }
+.logo-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; letter-spacing: 0.02em; }
+.logo-date-block { text-align: center; }
+.logo-date { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.75); text-transform: capitalize; line-height: 1.3; }
+.logo-time { font-size: 24px; font-weight: 300; letter-spacing: 1px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+
+/* ── FOTO PREPARAZIONE ── */
+.foto-prep-section { margin-bottom: 18px; }
+.foto-prep-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 10px; }
+.foto-prep-preview { position: relative; width: 100%; max-width: 320px; margin: 0 auto 10px; }
+.foto-prep-preview img { width: 100%; border-radius: var(--radius); border: 2px solid var(--border); display: block; object-fit: cover; max-height: 220px; }
+.foto-prep-remove { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.foto-prep-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border: 2px dashed var(--border); border-radius: var(--radius); background: var(--surface2); font-size: 15px; font-weight: 600; color: var(--text2); cursor: pointer; width: 100%; font-family: var(--font); transition: all 0.2s; }
+.foto-prep-btn:active { border-color: var(--accent); background: var(--surface); color: var(--accent); }
+.foto-prep-btn.has-foto { border-color: var(--success,#2e7d32); color: var(--success,#2e7d32); background: #f0f7f0; }
+
+/* ── STORICO GLOBALE ── */
+.sg-tab-bar { display: flex; gap: 6px; margin-bottom: 16px; }
+.sg-tab { flex: 1; padding: 10px 4px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-size: 12px; font-weight: 600; color: var(--text2); cursor: pointer; font-family: var(--font); text-align: center; transition: all 0.15s; }
+.sg-tab.active { background: var(--accent-dark); color: white; border-color: var(--accent-dark); }
+.sg-group { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); padding: 12px 0 6px; border-top: 1px solid var(--border); margin-top: 8px; }
+.sg-group:first-child { border-top: none; margin-top: 0; }
+.sg-item { background: var(--surface); border-radius: var(--radius-sm); border: 1px solid var(--border); padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+.sg-item-nome { font-size: 15px; font-weight: 700; }
+.sg-item-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
+.sg-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px; margin-bottom: 10px; }
+.sg-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.sg-card-paziente { font-size: 16px; font-weight: 700; }
+.sg-card-stato { font-size: 11px; font-weight: 700; font-family: var(--mono); }
+.sg-card-detail { font-size: 13px; color: var(--text2); margin-top: 3px; }
+.sg-card-foto { margin-top: 10px; }
+.sg-card-foto img { width: 100%; max-height: 180px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; }
+.sg-foto-placeholder { font-size: 12px; color: var(--text3); font-style: italic; }
 
 /* ── CARDS ── */
 .card { background: var(--surface); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); }
@@ -356,11 +390,28 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 ═══════════════════════════════════════ -->
 <div id="screen-dashboard" class="screen">
   <div class="logo-header">
-    <div class="logo-name">💊 Terapie Sostitutive</div>
-    <div class="logo-sub">Farmacia Ascona</div>
-    <div class="logo-date" id="header-date"></div>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name">Terapie Sostitutive</div>
+      <div class="logo-sub">Farmacia Ascona</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" id="hdr-date">—</div>
+      <div class="logo-time" id="hdr-time">—</div>
+    </div>
   </div>
+  <span id="header-date" style="display:none"></span>
   <div class="content">
+    <!-- Pulsanti azione -->
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <button class="fab" style="position:static;width:44px;height:44px;font-size:16px" onclick="openStoricoGlobale()" title="Storico generale">📜</button>
+      <button class="fab" style="position:static;width:44px;height:44px;font-size:16px" onclick="showScreen('screen-vista-giornaliera');renderVistaGiornaliera()" title="Vista giornaliera">📋</button>
+      <button class="fab" style="position:static;width:44px;height:44px;font-size:16px" onclick="showScreen('screen-operatori');renderOperatori()" title="Operatori">⚙️</button>
+      <button class="fab" style="position:static;width:44px;height:44px;font-size:16px;margin-left:auto" onclick="showNuovoPaziente()">+</button>
+    </div>
+
     <!-- Barra ricerca stile Dosettes -->
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -387,16 +438,36 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       </div>
     </div>
 
-    <div style="height:80px"></div>
-  </div>
-  <div style="position:fixed;bottom:20px;right:20px;display:flex;gap:10px;z-index:50">
-    <button class="fab" style="position:static;width:44px;height:44px;font-size:16px" onclick="showScreen('screen-vista-giornaliera');renderVistaGiornaliera()" title="Vista giornaliera">📋</button>
-    <button class="fab" style="position:static;width:44px;height:44px;font-size:16px" onclick="showScreen('screen-operatori');renderOperatori()" title="Operatori">⚙️</button>
-    <button class="fab" style="position:static" onclick="showNuovoPaziente()">+</button>
+    <div style="height:40px"></div>
   </div>
   <!-- Badge operatore in header -->
   <div style="position:fixed;top:14px;right:20px;z-index:200">
     <button class="header-user" id="header-user-badge" onclick="logout()" title="Tocca per uscire">—</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN: STORICO GLOBALE
+═══════════════════════════════════════ -->
+<div id="screen-storico-globale" class="screen">
+  <div class="header">
+    <button class="header-back" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
+    <div style="flex:1">
+      <div class="header-title">Storico Preparazioni</div>
+      <div class="header-subtitle" id="sg-header-sub">Terapie Sostitutive</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="sg-tab-bar">
+      <button class="sg-tab active" id="sg-tab-crono"    onclick="sgCambiVista('crono')">🕐 Cronologico</button>
+      <button class="sg-tab"        id="sg-tab-paziente" onclick="sgCambiVista('paziente')">👤 Paziente</button>
+      <button class="sg-tab"        id="sg-tab-data"     onclick="sgCambiVista('data')">📆 Data</button>
+    </div>
+    <div id="sg-loading" style="text-align:center;padding:40px;color:var(--text3);display:none">Caricamento...</div>
+    <div id="sg-view-crono"></div>
+    <div id="sg-view-paziente" style="display:none"></div>
+    <div id="sg-view-data"    style="display:none"></div>
+    <div style="height:40px"></div>
   </div>
 </div>
 
@@ -550,6 +621,21 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <div class="form-group">
       <label class="form-label">Note</label>
       <textarea class="form-textarea" id="prep-note" placeholder="Note operative (opzionale)" style="min-height:60px"></textarea>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- FOTO TERAPIA -->
+    <div class="foto-prep-section">
+      <div class="foto-prep-label">📷 Foto terapia (obbligatoria)</div>
+      <div id="foto-prep-preview" style="display:none" class="foto-prep-preview">
+        <img id="foto-prep-img" src="" alt="Foto terapia">
+        <button class="foto-prep-remove" onclick="rimuoviFotoPrep()" title="Rimuovi foto">✕</button>
+      </div>
+      <button class="foto-prep-btn" id="foto-prep-btn" onclick="document.getElementById('foto-prep-input').click()">
+        📷 Scatta foto terapia
+      </button>
+      <input type="file" id="foto-prep-input" accept="image/*" capture="environment" style="display:none" onchange="acquisisciFotoPrep(this)">
     </div>
 
     <div class="divider"></div>
@@ -928,10 +1014,12 @@ var firebaseConfig = {
 };
 
 var firestoreDB = null;
+var firebaseStorage = null;
 if (FIREBASE_ENABLED) {
   try {
     firebase.initializeApp(firebaseConfig);
     firestoreDB = firebase.firestore();
+    firebaseStorage = firebase.storage();
     // ── Fase 1.5: autenticazione anonima Firebase ──
     // Autenticazione con account dedicato per Security Rules.
     firebase.auth().signInWithEmailAndPassword('farmacia.ascona@gmail.com','7917139Dbc').catch(function(e){
@@ -1133,6 +1221,7 @@ var currentOperatore    = null;
 var currentPazienteId   = null;
 var currentProtocolloId = null;
 var _firmaCanvasData    = null;   // base64 firma ricevente
+var _fotoPrep           = null;   // { data: base64, url: string|null } — foto terapia preparazione
 var _firmaPreparatore   = null;   // oggetto firma preparatore (sigla, nome, ts, img)
 var _firmaControllore   = null;   // oggetto firma controllore
 var _modalitaSelezionata= null;   // modalita dispensazione corrente
@@ -2093,6 +2182,7 @@ function showNuovaPrep() {
   if (!currentPazienteId) return;
   var p = getCP();
   _firmaPreparatore = null;
+  rimuoviFotoPrep();
 
   document.getElementById('prep-header-title').textContent = 'Nuova preparazione';
   document.getElementById('prep-header-paziente').textContent = p.cognome+' '+p.nome;
@@ -2114,6 +2204,7 @@ function showNuovaPrep() {
     '<button class="btn btn-primary btn-full" onclick="richiediFirmaPreparatore()">✍️ Firma come Preparatore</button>';
   document.getElementById('prep-btn-salva-wrap').style.display='none';
   document.getElementById('prep-btn-salva-wrap').innerHTML='';
+  aggiornaStatoFirmaPrep();
 
   showScreen('screen-nuova-prep');
 }
@@ -2173,8 +2264,85 @@ function richiediFirmaPreparatore() {
   }
 }
 
+// ════════════════════════════════════════════
+// FOTO PREPARAZIONE
+// ════════════════════════════════════════════
+function comprImgPrep(dataUrl, maxPx, quality, cb) {
+  var img = new Image();
+  img.onload = function() {
+    var w = img.width, h = img.height;
+    if (w > maxPx || h > maxPx) {
+      if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+      else       { w = Math.round(w * maxPx / h); h = maxPx; }
+    }
+    var c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    cb(c.toDataURL('image/jpeg', quality));
+  };
+  img.src = dataUrl;
+}
+
+function acquisisciFotoPrep(input) {
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    comprImgPrep(e.target.result, 1200, 0.55, function(compressed) {
+      _fotoPrep = { data: compressed, url: null };
+      document.getElementById('foto-prep-img').src = compressed;
+      document.getElementById('foto-prep-preview').style.display = 'block';
+      var btn = document.getElementById('foto-prep-btn');
+      btn.textContent = '📷 Sostituisci foto';
+      btn.classList.add('has-foto');
+      aggiornaStatoFirmaPrep();
+    });
+  };
+  reader.readAsDataURL(input.files[0]);
+  input.value = '';
+}
+
+function rimuoviFotoPrep() {
+  _fotoPrep = null;
+  document.getElementById('foto-prep-preview').style.display = 'none';
+  document.getElementById('foto-prep-img').src = '';
+  var btn = document.getElementById('foto-prep-btn');
+  btn.textContent = '📷 Scatta foto terapia';
+  btn.classList.remove('has-foto');
+  aggiornaStatoFirmaPrep();
+}
+
+function aggiornaStatoFirmaPrep() {
+  var wrap = document.getElementById('prep-firma-wrap');
+  if (!wrap) return;
+  var btn = wrap.querySelector('button');
+  if (!btn) return;
+  if (!_fotoPrep) {
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    btn.title = 'Scatta prima la foto della terapia';
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = '';
+    btn.title = '';
+  }
+}
+
+async function uploadFotoPrep(base64) {
+  if (!firebaseStorage || !base64) return null;
+  try {
+    var blob = await fetch(base64).then(function(r){ return r.blob(); });
+    var ref = firebaseStorage.ref('metadone/foto/' + Date.now() + '_' + Math.random().toString(36).substr(2,6) + '.jpg');
+    await ref.put(blob, { contentType: 'image/jpeg' });
+    return await ref.getDownloadURL();
+  } catch(e) {
+    console.warn('Upload foto prep:', e);
+    return null;
+  }
+}
+
 function salvaPreparazione() {
   if (!_firmaPreparatore) { showToast('Firma preparatore mancante','error'); return; }
+  if (!_fotoPrep) { showToast('Scatta la foto della terapia prima di salvare','error'); return; }
   var p = getCP();
   if (!p) return;
 
@@ -2200,14 +2368,29 @@ function salvaPreparazione() {
     preparatore:   _firmaPreparatore,
     controllore:   null,
     dispensazione: null,
+    fotoUrl:       null,
     auditTrail:    [{ tipo:'creazione', op:_firmaPreparatore.sigla, ts:nowStr(), dettaglio:'Preparazione creata ('+dose+'mg/die × '+ng+'gg = '+dose*ng+'mg tot.)' }]
   };
 
   DB.protocolli.push(pr);
   sincronizzaProtocollo(pr);
+
+  var fotoData = _fotoPrep ? _fotoPrep.data : null;
   _firmaPreparatore = null;
+  _fotoPrep = null;
+
   showToast('Preparazione salvata ✓','success');
   openPaziente(p.id);
+
+  // Upload foto in background dopo aver già navigato
+  if (fotoData) {
+    uploadFotoPrep(fotoData).then(function(url) {
+      if (url) {
+        pr.fotoUrl = url;
+        sincronizzaProtocollo(pr);
+      }
+    });
+  }
 }
 
 // ════════════════════════════════════════════
@@ -2531,10 +2714,12 @@ function confermaDuplica() {
   aggiornaPrepGiorniGrid();
 
   _firmaPreparatore=null;
+  rimuoviFotoPrep();
   document.getElementById('prep-firma-wrap').innerHTML=
     '<button class="btn btn-primary btn-full" onclick="richiediFirmaPreparatore()">✍️ Firma come Preparatore</button>';
   document.getElementById('prep-btn-salva-wrap').style.display='none';
   document.getElementById('prep-btn-salva-wrap').innerHTML='';
+  aggiornaStatoFirmaPrep();
 
   // Log duplicazione nell'audit trail del protocollo sorgente
   pr.auditTrail.push({ tipo:'duplicazione', op:currentOperatore?currentOperatore.sigla:'?', ts:nowStr(), dettaglio:'Protocollo duplicato → nuovo periodo '+formatDate(dal)+' – '+formatDate(al) });
@@ -2785,6 +2970,176 @@ function rimuoviOperatore(i){
 }
 
 // ════════════════════════════════════════════
+// STORICO GLOBALE
+// ════════════════════════════════════════════
+var _sgVista = 'crono';
+var _sgProtocolli = [];
+
+function openStoricoGlobale() {
+  showScreen('screen-storico-globale');
+  _sgVista = 'crono';
+  ['crono','paziente','data'].forEach(function(v){
+    document.getElementById('sg-tab-'+v).classList.toggle('active', v==='crono');
+  });
+  sgCaricaERender();
+}
+
+function sgCambiVista(vista) {
+  _sgVista = vista;
+  ['crono','paziente','data'].forEach(function(v){
+    document.getElementById('sg-tab-'+v).classList.toggle('active', v===vista);
+    document.getElementById('sg-view-'+v).style.display = v===vista ? 'block' : 'none';
+  });
+  sgRender();
+}
+
+function sgCaricaERender() {
+  // Prendi i protocolli già in memoria locale
+  _sgProtocolli = (DB.protocolli || []).slice().sort(function(a,b){
+    var ta = a.preparatore && a.preparatore.ts ? a.preparatore.ts : (a.dataPreprazione||'');
+    var tb = b.preparatore && b.preparatore.ts ? b.preparatore.ts : (b.dataPreprazione||'');
+    return ta < tb ? 1 : -1;
+  });
+
+  // Prova a caricare aggiornamenti da Firestore
+  if (firestoreDB) {
+    document.getElementById('sg-loading').style.display = 'block';
+    firestoreDB.collection('protocolli_metadone')
+      .orderBy('dataPreprazione','desc')
+      .limit(500)
+      .get()
+      .then(function(snap) {
+        _sgProtocolli = [];
+        snap.forEach(function(d){ _sgProtocolli.push(Object.assign({ _id: d.id }, d.data())); });
+        document.getElementById('sg-loading').style.display = 'none';
+        sgRender();
+      })
+      .catch(function(e) {
+        console.warn('Storico Firestore:', e);
+        document.getElementById('sg-loading').style.display = 'none';
+        sgRender();
+      });
+  } else {
+    sgRender();
+  }
+}
+
+function sgStatoBadge(pr) {
+  var map = {
+    preparato:  '<span class="stato-preparato">PREPARATO</span>',
+    controllato:'<span class="stato-controllato">CONTROLLATO</span>',
+    dispensato: '<span class="stato-dispensato">DISPENSATO</span>',
+    annullato:  '<span class="stato-annullato">ANNULLATO</span>',
+    bozza:      '<span class="stato-bozza">BOZZA</span>'
+  };
+  return map[pr.stato] || '<span class="stato-bozza">'+escHtml(pr.stato||'—')+'</span>';
+}
+
+function sgNomePaziente(pr) {
+  // Cerca in DB locale
+  var pz = getPaziente(pr.pazienteId);
+  if (pz) return pz.cognome + ' ' + pz.nome;
+  return pr.pazienteId || '—';
+}
+
+function sgBuildCard(pr) {
+  var nome = sgNomePaziente(pr);
+  var fotoHtml = '';
+  if (pr.fotoUrl) {
+    fotoHtml = '<div class="sg-card-foto"><img src="'+escHtml(pr.fotoUrl)+'" alt="Foto terapia" onclick="window.open(\''+escHtml(pr.fotoUrl)+'\',\'_blank\')"></div>';
+  } else {
+    fotoHtml = '<div class="sg-card-foto"><span class="sg-foto-placeholder">Nessuna foto disponibile</span></div>';
+  }
+  return '<div class="sg-card">'
+    +'<div class="sg-card-header"><span class="sg-card-paziente">'+escHtml(nome)+'</span>'+sgStatoBadge(pr)+'</div>'
+    +'<div class="sg-card-detail">💊 '+escHtml(pr.farmaco||'—')+' · <b>'+escHtml(String(pr.dose||'?'))+'mg/die</b> · '+escHtml(String(pr.qtaTotale||'?'))+'mg tot.</div>'
+    +'<div class="sg-card-detail">📅 '+escHtml(formatDate(pr.periodoDal))+' – '+escHtml(formatDate(pr.periodoAl))+'</div>'
+    +'<div class="sg-card-detail">🔧 '+escHtml((pr.preparatore&&pr.preparatore.nome)||'—')
+      +(pr.controllore?' · 🔍 '+escHtml(pr.controllore.nome):'')
+      +(pr.dispensazione?' · 📦 '+escHtml(pr.dispensazione.operatore||'—'):'')+'</div>'
+    +(pr.lotto?'<div class="sg-card-detail" style="font-family:var(--mono);font-size:11px">Lotto: '+escHtml(pr.lotto)+'</div>':'')
+    +(pr.note?'<div class="sg-card-detail" style="font-style:italic">📝 '+escHtml(pr.note)+'</div>':'')
+    +fotoHtml
+    +'</div>';
+}
+
+function sgRender() {
+  ['crono','paziente','data'].forEach(function(v){
+    document.getElementById('sg-view-'+v).style.display = v===_sgVista ? 'block' : 'none';
+  });
+  document.getElementById('sg-header-sub').textContent = _sgProtocolli.length + ' preparazioni totali';
+
+  // ── CRONOLOGICO
+  if (_sgVista === 'crono') {
+    if (!_sgProtocolli.length) {
+      document.getElementById('sg-view-crono').innerHTML = '<div class="empty-state"><div class="icon">📜</div><p>Nessuna preparazione registrata</p></div>';
+      return;
+    }
+    document.getElementById('sg-view-crono').innerHTML = _sgProtocolli.map(sgBuildCard).join('');
+    return;
+  }
+
+  // ── PER PAZIENTE
+  if (_sgVista === 'paziente') {
+    var byP = {};
+    _sgProtocolli.forEach(function(pr) {
+      var nome = sgNomePaziente(pr);
+      if (!byP[nome]) byP[nome] = [];
+      byP[nome].push(pr);
+    });
+    var html = '';
+    Object.keys(byP).sort().forEach(function(nome) {
+      var list = byP[nome];
+      html += '<div class="sg-group">👤 '+escHtml(nome)+' ('+list.length+')</div>';
+      html += '<div class="sg-item" onclick="sgMostraPaziente(\''+escHtml(nome)+'\')">'
+        +'<div class="sg-item-nome">'+escHtml(nome)+'</div>'
+        +'<div class="sg-item-sub">'+list.length+' preparazioni</div>'
+        +'</div>';
+    });
+    document.getElementById('sg-view-paziente').innerHTML = html || '<div class="empty-state"><div class="icon">👤</div><p>Nessuna preparazione</p></div>';
+    return;
+  }
+
+  // ── PER DATA
+  if (_sgVista === 'data') {
+    var byD = {};
+    _sgProtocolli.forEach(function(pr) {
+      var d = pr.dataPreprazione ? formatDate(pr.dataPreprazione) : '—';
+      if (!byD[d]) byD[d] = [];
+      byD[d].push(pr);
+    });
+    var keys = Object.keys(byD).sort(function(a,b){ return a<b?1:-1; });
+    var html = '';
+    keys.forEach(function(d) {
+      var list = byD[d];
+      html += '<div class="sg-group">📆 '+escHtml(d)+'</div>';
+      html += '<div class="sg-item" onclick="sgMostraData(\''+escHtml(d)+'\')">'
+        +'<div class="sg-item-nome">'+escHtml(d)+'</div>'
+        +'<div class="sg-item-sub">'+list.length+' preparazioni</div>'
+        +'</div>';
+    });
+    document.getElementById('sg-view-data').innerHTML = html || '<div class="empty-state"><div class="icon">📆</div><p>Nessuna preparazione</p></div>';
+    return;
+  }
+}
+
+function sgMostraPaziente(nome) {
+  var list = _sgProtocolli.filter(function(pr){ return sgNomePaziente(pr) === nome; });
+  mostraModal('👤 '+nome,
+    list.map(sgBuildCard).join('') || '<p style="color:var(--text2)">Nessuna preparazione</p>',
+    '<button class="btn btn-ghost" onclick="chiudiModal()">Chiudi</button>'
+  );
+}
+
+function sgMostraData(d) {
+  var list = _sgProtocolli.filter(function(pr){ return formatDate(pr.dataPreprazione) === d; });
+  mostraModal('📆 '+d,
+    list.map(sgBuildCard).join('') || '<p style="color:var(--text2)">Nessuna preparazione</p>',
+    '<button class="btn btn-ghost" onclick="chiudiModal()">Chiudi</button>'
+  );
+}
+
+// ════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
@@ -2802,6 +3157,23 @@ document.addEventListener('DOMContentLoaded', function() {
   }).catch(function(){
     initLoginScreen();
   });
+
+  // ── Orologio barra titolo ──
+  (function() {
+    var giorni = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+    var mesi = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+    var elDate = document.getElementById('hdr-date');
+    var elTime = document.getElementById('hdr-time');
+    function pad(n) { return n < 10 ? '0' + n : n; }
+    function tick() {
+      var now = new Date();
+      elDate.textContent = giorni[now.getDay()] + ', ' + now.getDate() + ' ' + mesi[now.getMonth()];
+      elTime.textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    }
+    tick();
+    var ms = (60 - new Date().getSeconds()) * 1000;
+    setTimeout(function() { tick(); setInterval(tick, 60000); }, ms);
+  })();
 });
 </script>
 </body>
