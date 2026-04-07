@@ -1421,7 +1421,16 @@ function showScreen(id) {
   window.scrollTo(0,0);
 }
 function chiudiModal() { document.getElementById('modal-overlay').style.display='none'; }
-function mostraModal(html) {
+function mostraModal(titleOrHtml, body, footer) {
+  var html;
+  if (body !== undefined) {
+    // Chiamata con (titolo, corpo, footer)
+    html = '<div class="modal-title">' + titleOrHtml + '</div>' + body;
+    if (footer) html += '<div style="display:flex;gap:10px;margin-top:18px;justify-content:flex-end">' + footer + '</div>';
+  } else {
+    // Chiamata legacy con HTML completo
+    html = titleOrHtml;
+  }
   document.getElementById('modal-content').innerHTML = html;
   document.getElementById('modal-overlay').style.display = 'flex';
 }
@@ -2280,6 +2289,9 @@ function mostraAnnullaModal(protId) {
 }
 
 function apriPinAnnulla(protId) {
+  // Salva il motivo prima di chiudere il modal (il campo sparirà dal DOM)
+  var motivoEl = document.getElementById('annullo-motivo-input');
+  window._annulloMotivoPending = motivoEl ? motivoEl.value.trim() : '';
   chiudiModal();
   apriPin('annulla:'+protId,'🗑 Annulla protocollo','Inserisci il tuo PIN per confermare',4);
 }
@@ -2528,12 +2540,22 @@ function salvaPreparazione() {
 
   // Upload foto in background dopo aver già navigato
   if (fotoData) {
-    uploadFotoPrep(fotoData).then(function(url) {
-      if (url) {
-        pr.fotoUrl = url;
-        sincronizzaProtocollo(pr);
-      }
-    });
+    var tentativo = 0;
+    function tentaUpload() {
+      tentativo++;
+      uploadFotoPrep(fotoData).then(function(url) {
+        if (url) {
+          pr.fotoUrl = url;
+          sincronizzaProtocollo(pr);
+        } else if (tentativo < 3) {
+          // Riprova fino a 3 volte con backoff
+          setTimeout(tentaUpload, tentativo * 5000);
+        } else {
+          showToast('⚠️ Foto non caricata — riprova aprendo la preparazione', 'error');
+        }
+      });
+    }
+    tentaUpload();
   }
 }
 
@@ -2698,9 +2720,10 @@ function initFirmaCanvas() {
   _sigIsDrawing = false;
 
   // Dimensioni canvas = dimensioni display
-  canvas.width  = wrap.clientWidth  * (window.devicePixelRatio||1);
-  canvas.height = 260               * (window.devicePixelRatio||1);
-  canvas.style.height = '260px';
+  var canvasH = Math.min(260, Math.max(160, Math.round(window.innerHeight * 0.25)));
+  canvas.width  = wrap.clientWidth * (window.devicePixelRatio||1);
+  canvas.height = canvasH          * (window.devicePixelRatio||1);
+  canvas.style.height = canvasH + 'px';
 
   _sigCtx = canvas.getContext('2d');
   _sigCtx.scale(window.devicePixelRatio||1, window.devicePixelRatio||1);
@@ -2719,7 +2742,7 @@ function initFirmaCanvas() {
 
   canvas.ontouchstart = function(e){ e.preventDefault(); _sigIsDrawing=true; var t=e.touches[0],r=canvas.getBoundingClientRect(); _sigCtx.beginPath(); _sigCtx.moveTo(t.clientX-r.left,t.clientY-r.top); document.getElementById('canvas-hint').style.opacity='0'; };
   canvas.ontouchmove  = function(e){ e.preventDefault(); if(!_sigIsDrawing) return; var t=e.touches[0],r=canvas.getBoundingClientRect(); _sigCtx.lineTo(t.clientX-r.left,t.clientY-r.top); _sigCtx.stroke(); };
-  canvas.ontouchend   = function(){ _sigIsDrawing=false; };
+  canvas.ontouchend   = function(e){ e.preventDefault(); _sigIsDrawing=false; };
 }
 
 function clearFirmaCanvas() {
@@ -2755,7 +2778,7 @@ function salvaDispensazione(firmaImg) {
     firmaRiceventeImg: firmaImg||null,
     firmaAcquisita: !!firmaImg,
     ts:             nowStr(),
-    operatore:      currentOperatore ? currentOperatore.sigla : '?'
+    operatore:      currentOperatore ? currentOperatore.nome + ' (' + currentOperatore.sigla + ')' : '?'
   };
   pr.auditTrail.push({ tipo:'dispensazione', op:currentOperatore?currentOperatore.sigla:'?', ts:nowStr(),
     dettaglio:'Dispensato — '+modalitaLabel(_modalitaSelezionata)+(delNome?' — Delegato: '+delNome:'')+(firmaImg?' — Firma acquisita':'') });
@@ -2908,8 +2931,8 @@ function dispatchPinCallback(firma, op) {
 
   } else if (_pinCallback && _pinCallback.indexOf('annulla:')===0) {
     var protId = _pinCallback.split(':')[1];
-    var motivo = document.getElementById('annullo-motivo-input');
-    var motivoTxt = motivo ? motivo.value.trim() : '';
+    var motivoTxt = window._annulloMotivoPending || '';
+    window._annulloMotivoPending = '';
     confermaAnnullaProtocollo(protId, firma, motivoTxt);
   }
 }
@@ -3134,12 +3157,22 @@ function sgCambiVista(vista) {
   sgRender();
 }
 
+function sgSortKey(pr) {
+  // Usa dataPreprazione ISO (YYYY-MM-DD) come chiave primaria — ordinamento lessicografico affidabile
+  // Fallback: estrae data dal timestamp testuale "DD.MM.YYYY HH:MM" e lo converte
+  if (pr.dataPreprazione && /^\d{4}-\d{2}-\d{2}/.test(pr.dataPreprazione)) {
+    return pr.dataPreprazione;
+  }
+  var ts = (pr.preparatore && pr.preparatore.ts) || '';
+  var m = ts.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+  if (m) return m[3] + '-' + m[2] + '-' + m[1];
+  return '0000-00-00';
+}
+
 function sgCaricaERender() {
   // Prendi i protocolli già in memoria locale
   _sgProtocolli = (DB.protocolli || []).slice().sort(function(a,b){
-    var ta = a.preparatore && a.preparatore.ts ? a.preparatore.ts : (a.dataPreprazione||'');
-    var tb = b.preparatore && b.preparatore.ts ? b.preparatore.ts : (b.dataPreprazione||'');
-    return ta < tb ? 1 : -1;
+    return sgSortKey(a) < sgSortKey(b) ? 1 : -1;
   });
 
   // Prova a caricare aggiornamenti da Firestore
@@ -3152,6 +3185,8 @@ function sgCaricaERender() {
       .then(function(snap) {
         _sgProtocolli = [];
         snap.forEach(function(d){ _sgProtocolli.push(Object.assign({ _id: d.id }, d.data())); });
+        // Ordina anche i risultati Firestore con la stessa logica
+        _sgProtocolli.sort(function(a,b){ return sgSortKey(a) < sgSortKey(b) ? 1 : -1; });
         document.getElementById('sg-loading').style.display = 'none';
         sgRender();
       })
