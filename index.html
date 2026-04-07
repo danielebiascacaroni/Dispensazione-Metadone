@@ -858,7 +858,22 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       </div>
       <div class="form-group">
         <label class="form-label">Dose (mg/die)</label>
-        <input type="number" class="form-input" id="new-dose" min="1" step="1" placeholder="es. 50">
+        <input type="number" class="form-input" id="new-dose" min="1" step="1" placeholder="es. 50" oninput="calcMgSettNew()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Giorni pausa/sett. (0–3)</label>
+        <select class="form-select" id="new-pausa" onchange="calcMgSettNew()">
+          <option value="0">0 — nessuna pausa</option>
+          <option value="1">1 giorno</option>
+          <option value="2">2 giorni</option>
+          <option value="3">3 giorni</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">mg/settimana (calcolati)</label>
+        <input type="text" class="form-input" id="new-mg-sett" readonly placeholder="—" style="background:var(--surface2)">
       </div>
     </div>
     <div class="divider"></div>
@@ -897,6 +912,106 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       </select>
     </div>
     <button class="btn btn-primary btn-full btn-lg" style="margin-top:8px" onclick="salvaNuovoPaziente()">✅ Crea paziente</button>
+    <div style="height:40px"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCREEN 12 — MODIFICA TERAPIA
+═══════════════════════════════════════ -->
+<div id="screen-modifica-terapia" class="screen">
+  <div class="header">
+    <button class="header-back" id="mt-back-btn" onclick="tornaScheda()">←</button>
+    <div style="flex:1">
+      <div class="header-title">Modifica terapia</div>
+      <div class="header-subtitle" id="mt-header-paziente"></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="alert-box alert-warning">⚠️ La terapia attuale verrà archiviata. Compila tutti i campi obbligatori (*).</div>
+
+    <div class="card-title">TERAPIA</div>
+    <div class="form-group">
+      <label class="form-label">Farmaco / Sostanza *</label>
+      <input type="text" class="form-input" id="mt-farmaco" placeholder="es. Metadone Streuli 10 mg/ml">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Forma farmaceutica</label>
+        <input type="text" class="form-input" id="mt-forma" placeholder="es. Soluzione orale">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Dose (mg/die) *</label>
+        <input type="number" class="form-input" id="mt-dose" min="1" step="1" placeholder="es. 50" oninput="calcMgSettMt()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Giorni pausa/sett. (0–3)</label>
+        <select class="form-select" id="mt-pausa" onchange="calcMgSettMt()">
+          <option value="0">0 — nessuna pausa</option>
+          <option value="1">1 giorno</option>
+          <option value="2">2 giorni</option>
+          <option value="3">3 giorni</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">mg/settimana (calcolati)</label>
+        <input type="text" class="form-input" id="mt-mg-sett" readonly placeholder="—" style="background:var(--surface2)">
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="card-title">PARAMETRI OPERATIVI</div>
+    <div class="form-group">
+      <label class="form-label">Medico prescrivente</label>
+      <input type="text" class="form-input" id="mt-medico" placeholder="es. Dr. Bianchi">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Data inizio terapia</label>
+        <input type="date" class="form-input" id="mt-data">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Giorno consegna abituale</label>
+        <select class="form-select" id="mt-giorno">
+          <option>Lunedì</option><option>Martedì</option><option>Mercoledì</option>
+          <option>Giovedì</option><option>Venerdì</option><option>Sabato</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Modalità usuale</label>
+      <select class="form-select" id="mt-modalita">
+        <option value="assunzione_farmacia">Assunzione in farmacia</option>
+        <option value="take_home">Take-home</option>
+        <option value="delegato">Consegna a delegato</option>
+        <option value="mancata">Mancata assunzione</option>
+        <option value="parziale">Assunzione parziale</option>
+      </select>
+    </div>
+
+    <div class="divider"></div>
+    <div class="card-title">TRACCIABILITÀ MODIFICA</div>
+    <div class="form-group">
+      <label class="form-label">Motivo modifica *</label>
+      <input type="text" class="form-input" id="mt-motivo" placeholder="es. Ordine del medico, adeguamento dose...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Su ordine di (medico / riferimento) *</label>
+      <input type="text" class="form-input" id="mt-ordine" placeholder="es. Dr. Bianchi — chiamata 07.04.2026">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Riferimento ricetta (opzionale)</label>
+      <input type="text" class="form-input" id="mt-ricetta" placeholder="es. Ricetta n. 1234 del 25.03.2026">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Modificata da</label>
+      <input type="text" class="form-input" id="mt-operatore-display" readonly style="background:var(--surface2)">
+    </div>
+
+    <div class="divider"></div>
+    <button class="btn btn-primary btn-full btn-lg" onclick="salvaModificaTerapia()">💾 Salva modifica terapia</button>
     <div style="height:40px"></div>
   </div>
 </div>
@@ -1473,10 +1588,13 @@ function apriPin(callback, titolo, sottotitolo, maxLen, filtroTipo) {
 
   // Popola select operatori
   var sel = document.getElementById('pin-operatore');
-  // filtroTipo 'preparatore' → solo operatori con pin5 o pinFirmaHash
+  // filtroTipo 'farmacista' → tutti gli operatori non-assistenti (attivo !== false)
   var lista = OPERATORI.filter(function(o){
-    if (!o.attivo) return false;
-    if (filtroTipo==='preparatore') return !!(o.pin5||o.pinFirmaHash);
+    if (o.attivo === false) return false;
+    if (filtroTipo==='farmacista') {
+      var r = (o.ruolo||'').toLowerCase();
+      return r !== 'assistente' && r !== 'assistant';
+    }
     return true;
   });
   sel.innerHTML = '<option value="">— Seleziona operatore —</option>'
@@ -1519,18 +1637,12 @@ async function verificaPin() {
   var op = OPERATORI.find(function(o){ return o.sigla===sigla; });
   if (!op) { errEl.textContent='Operatore non trovato'; return; }
 
-  // Verifica PIN (4 o 5 cifre a seconda del contesto)
+  // Verifica PIN — prova tutti i tipi disponibili per l'operatore
   var pinOk = false;
-  if (_pinMaxLen===5) {
-    // Preparatore: usa pin5 o pinFirmaHash (Dosettes Firestore)
-    if (op.pinFirmaHash) { pinOk = (await sha256(_pinBuffer))===op.pinFirmaHash; }
-    else if (op.pin5) { pinOk = _pinBuffer===String(op.pin5); }
-    else { errEl.textContent='Operatore non configurato come preparatore (manca pinFirmaHash)'; return; }
-  } else {
-    // Controllore/normale: usa pinHash (Dosettes Firestore) o pin (demo locale)
-    if (op.pinHash) { pinOk = (await sha256(_pinBuffer))===op.pinHash; }
-    else if (op.pin) { pinOk = _pinBuffer===String(op.pin); }
-  }
+  if (op.pinFirmaHash) { pinOk = (await sha256(_pinBuffer))===op.pinFirmaHash; }
+  if (!pinOk && op.pin5)    { pinOk = _pinBuffer===String(op.pin5); }
+  if (!pinOk && op.pinHash) { pinOk = (await sha256(_pinBuffer))===op.pinHash; }
+  if (!pinOk && op.pin)     { pinOk = _pinBuffer===String(op.pin); }
 
   if (!pinOk) {
     errEl.textContent='❌ PIN errato';
@@ -1761,7 +1873,10 @@ function renderTabTerapia(p) {
   html += '<div style="font-size:11px;font-weight:700;color:var(--info);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Terapia attiva</div>';
   html += '<div style="font-size:17px;font-weight:700">'+escHtml(t.farmaco||'—')+'</div>';
   html += '<div style="font-size:14px;color:var(--text2);margin-bottom:4px">'+escHtml(t.forma||'')+'</div>';
-  html += '<div style="font-size:24px;font-weight:800;color:var(--info);font-family:var(--mono);margin-bottom:8px">'+escHtml(String(t.dose||'?'))+' mg/die</div>';
+  html += '<div style="font-size:24px;font-weight:800;color:var(--info);font-family:var(--mono);margin-bottom:4px">'+escHtml(String(t.dose||'?'))+' mg/die</div>';
+  if (t.pausa !== undefined && t.dose) {
+    html += '<div style="font-size:15px;font-weight:600;color:var(--info);font-family:var(--mono);margin-bottom:8px">'+(t.dose*(7-(t.pausa||0)))+' mg/settimana'+(t.pausa?' <span style="font-size:12px;font-weight:400;color:var(--text3)">('+t.pausa+' giorno/i pausa)</span>':'')+'</div>';
+  } else { html += '<div style="margin-bottom:8px"></div>'; }
   html += '<div class="info-row"><span class="info-key">In vigore dal</span><span class="info-val" style="font-family:var(--mono)">'+escHtml(p.dataInizioTerapia ? formatDate(p.dataInizioTerapia) : '—')+'</span></div>';
   html += '<div class="info-row"><span class="info-key">Medico prescrivente</span><span class="info-val">'+escHtml(p.medico||'—')+'</span></div>';
   html += '<div class="info-row"><span class="info-key">Giorno consegna</span><span class="info-val">'+escHtml(p.giornoConsegna||'—')+'</span></div>';
@@ -1991,6 +2106,20 @@ function salvaAnnotazione() {
   showToast('Annotazione salvata ✓','success');
 }
 
+function calcMgSettNew() {
+  var dose  = parseFloat(document.getElementById('new-dose').value) || 0;
+  var pausa = parseInt(document.getElementById('new-pausa').value) || 0;
+  var el    = document.getElementById('new-mg-sett');
+  el.value  = dose > 0 ? (dose * (7 - pausa)).toFixed(0) + ' mg' : '—';
+}
+
+function calcMgSettMt() {
+  var dose  = parseFloat(document.getElementById('mt-dose').value) || 0;
+  var pausa = parseInt(document.getElementById('mt-pausa').value) || 0;
+  var el    = document.getElementById('mt-mg-sett');
+  el.value  = dose > 0 ? (dose * (7 - pausa)).toFixed(0) + ' mg' : '—';
+}
+
 function showNuovoPaziente() {
   showScreen('screen-nuovo-paziente');
   ['new-cognome','new-nome','new-telefono','new-indirizzo','new-medico','new-note'].forEach(function(id){
@@ -1998,6 +2127,8 @@ function showNuovoPaziente() {
   });
   var d=document.getElementById('new-dose'); if(d) d.value='';
   var ddn=document.getElementById('new-ddn'); if(ddn) ddn.value='';
+  var ps=document.getElementById('new-pausa'); if(ps) ps.value='0';
+  var ms=document.getElementById('new-mg-sett'); if(ms) ms.value='—';
 }
 
 function salvaNuovoPaziente() {
@@ -2016,11 +2147,13 @@ function salvaNuovoPaziente() {
     modalitaUsuale:(document.getElementById('new-modalita')||{}).value||'assunzione_farmacia',
     statoTerapia:(document.getElementById('new-stato')||{}).value||'attiva',
     noteOperative:(document.getElementById('new-note')||{}).value.trim()||'',
-    terapia:{
-      farmaco:(document.getElementById('new-farmaco')||{value:'Metadone Streuli 10 mg/ml'}).value.trim()||'Metadone Streuli 10 mg/ml',
-      forma:(document.getElementById('new-forma')||{value:'Soluzione orale'}).value.trim()||'Soluzione orale',
-      dose:parseFloat((document.getElementById('new-dose')||{value:'0'}).value)||0
-    },
+    terapia:(function(){
+      var farmaco=(document.getElementById('new-farmaco')||{value:'Metadone Streuli 10 mg/ml'}).value.trim()||'Metadone Streuli 10 mg/ml';
+      var forma=(document.getElementById('new-forma')||{value:'Soluzione orale'}).value.trim()||'Soluzione orale';
+      var dose=parseFloat((document.getElementById('new-dose')||{value:'0'}).value)||0;
+      var pausa=parseInt((document.getElementById('new-pausa')||{value:'0'}).value)||0;
+      return { farmaco:farmaco, forma:forma, dose:dose, pausa:pausa, mgSettimana:dose*(7-pausa) };
+    })(),
     storico:[{ tipo:'creazione', data:todayISO(), azione:'Paziente inserito', op:currentOperatore?currentOperatore.sigla:'?', ts:nowStr() }]
   };
   DB.pazienti.push(p);
@@ -2033,44 +2166,49 @@ function salvaNuovoPaziente() {
 // ANNULLA PROTOCOLLO
 // ════════════════════════════════════════════
 // ════════════════════════════════════════════
-// MODIFICA TERAPIA (solo preparatore PIN5)
+// MODIFICA TERAPIA
 // ════════════════════════════════════════════
-function richiediFirmaModificaTerapia() {
-  apriPin('modifica_terapia','✏️ Modifica terapia',
-    'Funzione riservata al preparatore (PIN 5 cifre)',5,'preparatore');
+function tornaScheda() {
+  var p = getCP(); if (!p) return;
+  showScreen('screen-paziente');
+  switchTabPz('terapia', document.querySelector('#screen-paziente .tab-btn'));
+  renderTabTerapia(p);
 }
 
-function showModificaTerapia() {
+function richiediFirmaModificaTerapia() {
+  openModificaTerapia();
+}
+
+function openModificaTerapia() {
   var p = getCP(); if (!p) return;
   var t = p.terapia || {};
-  mostraModal('✏️ Modifica terapia – '+escHtml(p.cognome+' '+p.nome),
-    '<div class="alert-box alert-warning" style="margin-bottom:12px">La modifica aggiorna la terapia attiva e archivia quella precedente.</div>'+
-    '<div class="form-group"><label class="form-label">Farmaco *</label>'+
-    '<input type="text" class="form-input" id="mt-farmaco" value="'+escHtml(t.farmaco||'')+'" placeholder="es. Metadone Streuli 10 mg/ml"></div>'+
-    '<div class="form-row">'+
-    '<div class="form-group"><label class="form-label">Forma farmaceutica</label>'+
-    '<input type="text" class="form-input" id="mt-forma" value="'+escHtml(t.forma||'')+'" placeholder="es. Soluzione orale"></div>'+
-    '<div class="form-group"><label class="form-label">Dose (mg/die) *</label>'+
-    '<input type="number" class="form-input" id="mt-dose" value="'+(t.dose||'')+'" min="1" step="1"></div></div>'+
-    '<div class="form-group"><label class="form-label">Medico prescrivente</label>'+
-    '<input type="text" class="form-input" id="mt-medico" value="'+escHtml(p.medico||'')+'" placeholder="es. Dr. Bianchi"></div>'+
-    '<div class="form-group"><label class="form-label">Data inizio (lascia vuoto = oggi)</label>'+
-    '<input type="date" class="form-input" id="mt-data" value="'+escHtml(p.dataInizioTerapia||'')+'"></div>'+
-    '<div class="form-group"><label class="form-label">Giorno consegna</label>'+
-    '<input type="text" class="form-input" id="mt-giorno" value="'+escHtml(p.giornoConsegna||'')+'" placeholder="es. Lunedì sera"></div>'+
-    '<div class="form-group"><label class="form-label">Modalità usuale</label>'+
-    '<select class="form-select" id="mt-modalita">'+
-    ['assunzione_farmacia','take_home','delegato','mancata','parziale'].map(function(m){
-      return '<option value="'+m+'"'+(p.modalitaUsuale===m?' selected':'')+'>'+modalitaLabel(m)+'</option>';
-    }).join('')+
-    '</select></div>'+
-    '<div class="form-group"><label class="form-label">Motivo modifica *</label>'+
-    '<input type="text" class="form-input" id="mt-motivo" placeholder="es. Ordine del medico via mail"></div>'+
-    '<div class="form-group"><label class="form-label">Riferimento ricetta (opzionale)</label>'+
-    '<input type="text" class="form-input" id="mt-ricetta" placeholder="es. Ricetta n. 1234 del 25.03.2026"></div>',
-    '<button class="btn btn-ghost" onclick="chiudiModal()">Annulla</button>'+
-    '<button class="btn btn-primary" onclick="salvaModificaTerapia()">Salva modifica</button>'
-  );
+
+  document.getElementById('mt-header-paziente').textContent = p.cognome + ' ' + p.nome;
+  document.getElementById('mt-farmaco').value  = t.farmaco || '';
+  document.getElementById('mt-forma').value    = t.forma || '';
+  document.getElementById('mt-dose').value     = t.dose || '';
+  document.getElementById('mt-pausa').value    = t.pausa !== undefined ? t.pausa : 0;
+  document.getElementById('mt-medico').value   = p.medico || '';
+  document.getElementById('mt-data').value     = p.dataInizioTerapia || todayISO();
+  document.getElementById('mt-motivo').value   = '';
+  document.getElementById('mt-ordine').value   = '';
+  document.getElementById('mt-ricetta').value  = '';
+  document.getElementById('mt-operatore-display').value = currentOperatore ? currentOperatore.nome + ' (' + currentOperatore.sigla + ')' : '—';
+
+  // Giorno consegna
+  var gSel = document.getElementById('mt-giorno');
+  Array.from(gSel.options).forEach(function(opt) {
+    opt.selected = opt.value === p.giornoConsegna || opt.text === p.giornoConsegna;
+  });
+
+  // Modalità usuale
+  var mSel = document.getElementById('mt-modalita');
+  Array.from(mSel.options).forEach(function(opt) {
+    opt.selected = opt.value === p.modalitaUsuale;
+  });
+
+  calcMgSettMt();
+  showScreen('screen-modifica-terapia');
 }
 
 function salvaModificaTerapia() {
@@ -2078,36 +2216,49 @@ function salvaModificaTerapia() {
   var farmaco = document.getElementById('mt-farmaco').value.trim();
   var forma   = document.getElementById('mt-forma').value.trim();
   var dose    = parseFloat(document.getElementById('mt-dose').value);
+  var pausa   = parseInt(document.getElementById('mt-pausa').value) || 0;
   var medico  = document.getElementById('mt-medico').value.trim();
   var dataI   = document.getElementById('mt-data').value || todayISO();
-  var giorno  = document.getElementById('mt-giorno').value.trim();
+  var giorno  = document.getElementById('mt-giorno').value;
   var modal   = document.getElementById('mt-modalita').value;
   var motivo  = document.getElementById('mt-motivo').value.trim();
+  var ordine  = document.getElementById('mt-ordine').value.trim();
   var ricetta = document.getElementById('mt-ricetta').value.trim();
-  if (!farmaco || !dose || !motivo) { showToast('Compilare farmaco, dose e motivo (*)','error'); return; }
+
+  if (!farmaco) { showToast('Inserire il farmaco (*)','error'); return; }
+  if (!dose)    { showToast('Inserire la dose (*)','error'); return; }
+  if (!motivo)  { showToast('Inserire il motivo della modifica (*)','error'); return; }
+  if (!ordine)  { showToast('Inserire chi ha ordinato la modifica (*)','error'); return; }
 
   // Archivia terapia attuale in storiaTerap
   if (!p.storiaTerap) p.storiaTerap = [];
   p.storiaTerap.push({
-    terapia: { farmaco: (p.terapia&&p.terapia.farmaco)||'—', forma:(p.terapia&&p.terapia.forma)||'', dose:(p.terapia&&p.terapia.dose)||0 },
-    dataFine: todayISO(), motivo: motivo, ricetta: ricetta||'',
-    op: currentOperatore.sigla, ts: nowStr()
+    terapia: { farmaco:(p.terapia&&p.terapia.farmaco)||'—', forma:(p.terapia&&p.terapia.forma)||'', dose:(p.terapia&&p.terapia.dose)||0, pausa:(p.terapia&&p.terapia.pausa)||0 },
+    dataFine: todayISO(), motivo: motivo, ordine: ordine, ricetta: ricetta||'',
+    op: currentOperatore ? currentOperatore.sigla : '?',
+    opNome: currentOperatore ? currentOperatore.nome : '?',
+    ts: nowStr()
   });
 
   // Aggiorna terapia attiva
-  p.terapia = { farmaco:farmaco, forma:forma, dose:dose };
+  p.terapia = { farmaco:farmaco, forma:forma, dose:dose, pausa:pausa, mgSettimana:dose*(7-pausa) };
   p.medico = medico || p.medico;
   p.dataInizioTerapia = dataI;
-  p.giornoConsegna = giorno || p.giornoConsegna;
+  p.giornoConsegna = giorno;
   p.modalitaUsuale = modal;
 
   // Audit trail paziente
   if (!p.storico) p.storico = [];
-  p.storico.push({ tipo:'modifica_terapia', data:todayISO(), op:currentOperatore.sigla, ts:nowStr(),
-    azione:'Terapia modificata: '+farmaco+' '+dose+'mg/die · Motivo: '+motivo+(ricetta?' · Ricetta: '+ricetta:'') });
+  p.storico.push({
+    tipo: 'modifica_terapia', data: todayISO(),
+    op: currentOperatore ? currentOperatore.sigla : '?',
+    ts: nowStr(),
+    azione: 'Terapia modificata: '+farmaco+' '+dose+'mg/die · Motivo: '+motivo+' · Ordine: '+ordine+(ricetta?' · Ricetta: '+ricetta:'')
+  });
 
   sincronizzaPaziente(p);
-  chiudiModal();
+  showScreen('screen-paziente');
+  switchTabPz('terapia', document.querySelector('#screen-paziente .tab-btn'));
   renderTabTerapia(p);
   showToast('Terapia aggiornata ✓','success');
 }
@@ -2254,14 +2405,7 @@ function richiediFirmaPreparatore() {
   var al      = document.getElementById('prep-al').value;
   if (!farmaco||!dose||!lotto||!dal||!al) { showToast('Compilare tutti i campi obbligatori (*)','error'); return; }
   if (dal>al) { showToast('La data di fine deve essere dopo la data di inizio','error'); return; }
-  // Cerca preparatori disponibili (tipo=preparatore)
-  var hasPrep = OPERATORI.some(function(o){ return o.attivo&&(o.pin5||o.pinFirmaHash); });
-  if (!hasPrep) {
-    // fallback: usa pin normale 4 cifre se non c'è preparatore configurato
-    apriPin('preparatore','✍️ Firma Preparatore','Seleziona il preparatore e inserisci il PIN',4);
-  } else {
-    apriPin('preparatore','✍️ Firma Preparatore','PIN 5 cifre del preparatore',5,'preparatore');
-  }
+  apriPin('preparatore','✍️ Firma Preparatore','Seleziona il farmacista e inserisci il PIN',4,'farmacista');
 }
 
 // ════════════════════════════════════════════
@@ -2767,9 +2911,6 @@ function dispatchPinCallback(firma, op) {
     var motivo = document.getElementById('annullo-motivo-input');
     var motivoTxt = motivo ? motivo.value.trim() : '';
     confermaAnnullaProtocollo(protId, firma, motivoTxt);
-  } else if (_pinCallback==='modifica_terapia') {
-    chiudiModal();
-    showModificaTerapia();
   }
 }
 
