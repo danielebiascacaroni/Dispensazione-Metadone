@@ -380,7 +380,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <button class="login-pin-btn" onclick="loginPinDigit('9')">9</button>
     <button class="login-pin-btn action" onclick="loginPinClear()">⌫</button>
     <button class="login-pin-btn" onclick="loginPinDigit('0')">0</button>
-    <button class="login-pin-btn empty"></button>
+    <button class="login-pin-btn action" onclick="loginPinConfirm()" style="background:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.7)">OK</button>
   </div>
   <div style="height:40px"></div>
 </div>
@@ -415,7 +415,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <!-- Barra ricerca stile Dosettes -->
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
-      <input type="search" id="search-input" placeholder="Cerca paziente..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <input type="search" id="dash-search-input" placeholder="Cerca paziente..." autocomplete="off" autocorrect="off" spellcheck="false">
     </div>
 
     <!-- Risultati ricerca (visibili solo quando si digita) -->
@@ -513,7 +513,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   <div class="content">
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
-      <input type="search" id="search-input" placeholder="Cerca paziente..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <input type="search" id="patient-search-input" placeholder="Cerca paziente..." autocomplete="off" autocorrect="off" spellcheck="false">
     </div>
     <div class="section-header">
       <span class="section-title">Pazienti</span>
@@ -564,7 +564,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     </div>
   </div>
   <div class="content">
-    <div class="alert-box alert-warning">⚠️ Compilare tutti i campi prima di procedere con la firma del preparatore.</div>
+    <div class="alert-box alert-warning">⚠️ Compilare tutti i campi prima di procedere con la firma del preparatore farmacista.</div>
 
     <div class="form-row">
       <div class="form-group">
@@ -656,10 +656,9 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 
     <div class="divider"></div>
 
-    <!-- FIRMA PREPARATORE -->
-    <div class="card-title">FIRMA PREPARATORE (PIN 5 cifre)</div>
+    <!-- SALVA -->
     <div id="prep-firma-wrap">
-      <button class="btn btn-primary btn-full" onclick="richiediFirmaPreparatore()">✍️ Firma come Preparatore</button>
+      <button class="btn btn-primary btn-full btn-lg" id="prep-salva-btn" onclick="salvaEProsegui()">💾 Salva e prosegui</button>
     </div>
 
     <div style="margin-top:16px" id="prep-btn-salva-wrap" style="display:none"></div>
@@ -674,25 +673,67 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   <div class="header">
     <button class="header-back" onclick="showScreen('screen-paziente')">←</button>
     <div style="flex:1">
-      <div class="header-title">Modulo controllo</div>
+      <div class="header-title">Controllo preparazione</div>
       <div class="header-subtitle" id="ctrl-header-sub"></div>
     </div>
   </div>
   <div class="content">
-    <div class="alert-box alert-info">🔍 Il controllore deve essere una persona diversa dal preparatore.</div>
 
     <!-- Riepilogo protocollo -->
     <div class="card" id="ctrl-riepilogo"></div>
 
     <div class="divider"></div>
 
-    <!-- FIRMA CONTROLLORE -->
-    <div class="card-title">FIRMA CONTROLLORE (PIN 4 cifre)</div>
-    <div id="ctrl-firma-wrap">
-      <button class="btn btn-info btn-full" onclick="richiediFirmaControllore()">🔍 Firma come Controllore</button>
+    <!-- IDENTIFICAZIONE CONTROLLORE -->
+    <div class="card-title">CONTROLLORE</div>
+    <div class="form-group">
+      <select class="form-select" id="ctrl-operatore-sel" onchange="ctrlOnOperatoreChange()">
+        <option value="">— Seleziona operatore —</option>
+      </select>
     </div>
 
-    <div style="margin-top:16px" id="ctrl-btn-conferma" style="display:none"></div>
+    <!-- Warning stesso operatore + checkbox conferma -->
+    <div id="ctrl-stesso-warn" style="display:none" class="alert-box alert-warning">
+      ⚠️ Stai controllando una preparazione che hai preparato tu stesso. Verifica con attenzione.
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:600;cursor:pointer">
+        <input type="checkbox" id="ctrl-stesso-check" onchange="ctrlAggiornaPulsante()" style="width:18px;height:18px;accent-color:var(--accent)">
+        Ho verificato attentamente e confermo il controllo
+      </label>
+    </div>
+
+    <!-- PIN inline -->
+    <div id="ctrl-pin-wrap" style="display:none">
+      <div class="form-group">
+        <label class="form-label">PIN operatore</label>
+        <div style="display:flex;gap:12px;justify-content:center;margin-bottom:12px" id="ctrl-pin-dots">
+          <div class="pin-dot-sm" id="cpd0"></div>
+          <div class="pin-dot-sm" id="cpd1"></div>
+          <div class="pin-dot-sm" id="cpd2"></div>
+          <div class="pin-dot-sm" id="cpd3"></div>
+        </div>
+        <div class="pin-grid" style="justify-content:center">
+          <button class="pin-key" onclick="ctrlPinKey('1')">1</button>
+          <button class="pin-key" onclick="ctrlPinKey('2')">2</button>
+          <button class="pin-key" onclick="ctrlPinKey('3')">3</button>
+          <button class="pin-key" onclick="ctrlPinKey('4')">4</button>
+          <button class="pin-key" onclick="ctrlPinKey('5')">5</button>
+          <button class="pin-key" onclick="ctrlPinKey('6')">6</button>
+          <button class="pin-key" onclick="ctrlPinKey('7')">7</button>
+          <button class="pin-key" onclick="ctrlPinKey('8')">8</button>
+          <button class="pin-key" onclick="ctrlPinKey('9')">9</button>
+          <button class="pin-key delete" onclick="ctrlPinKey('del')">⌫</button>
+          <button class="pin-key" onclick="ctrlPinKey('0')">0</button>
+          <button class="pin-key confirm" onclick="ctrlPinKey('ok')">OK</button>
+        </div>
+        <div class="pin-error" id="ctrl-pin-error"></div>
+      </div>
+    </div>
+
+    <!-- Pulsante conferma (abilitato solo dopo PIN ok) -->
+    <div style="margin-top:8px">
+      <button class="btn btn-primary btn-full btn-lg" id="ctrl-conferma-btn" onclick="salvaControllo()" disabled style="opacity:0.4">✅ Conferma controllo</button>
+    </div>
+
     <div style="height:40px"></div>
   </div>
 </div>
@@ -1041,7 +1082,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <div class="header-title">Gestione Operatori</div>
   </div>
   <div class="content">
-    <div class="alert-box alert-warning">🔐 Gli operatori con ruolo Preparatore usano PIN a 5 cifre e devono avere una firma immagine registrata in Firestore.</div>
+    <div class="alert-box alert-warning">🔐 Ogni operatore usa un solo PIN. Permessi per ruolo: farmacista = tutto, assistente = controllo e dispensazione.</div>
     <div class="section-header">
       <span class="section-title">Operatori attivi</span>
       <button class="btn btn-sm btn-primary" onclick="showModalNuovoOperatore()">+ Aggiungi</button>
@@ -1191,13 +1232,13 @@ async function sha256(msg) {
 function sincronizzaPaziente(p) {
   if (!FIREBASE_ENABLED || !firestoreDB) return;
   firestoreDB.collection('pazienti_metadone').doc(p.id).set(p)
-    .catch(function(e){ console.error('Sync paziente:', e.code); });
+    .catch(function(e){ console.error('Sync paziente:', e.code); showToast('⚠️ Sincronizzazione cloud non riuscita', 'error'); });
 }
 
 function sincronizzaProtocollo(pr) {
   if (!FIREBASE_ENABLED || !firestoreDB) return;
   firestoreDB.collection('protocolli_metadone').doc(pr.id).set(pr)
-    .catch(function(e){ console.error('Sync protocollo:', e.code); });
+    .catch(function(e){ console.error('Sync protocollo:', e.code); showToast('⚠️ Sincronizzazione cloud non riuscita', 'error'); });
 }
 
 function eliminaProtocolloFirestore(id) {
@@ -1238,10 +1279,9 @@ function loadData() {
 // ════════════════════════════════════════════
 // DEMO DATA
 // ════════════════════════════════════════════
-// Demo offline (FIREBASE_ENABLED=false): campi pin/pin5 in chiaro
-// Con Firebase: pinHash (4 cifre SHA-256), pinFirmaHash (5 cifre SHA-256), signatureB64
+// Demo offline (FIREBASE_ENABLED=false): campo pin in chiaro; con Firebase: pinHash
 var OPERATORI = [
-  { sigla:'DB', nome:'Daniele B.',   ruolo:'farmacista', pin:'1111', pin5:'11111', attivo:true },
+  { sigla:'DB', nome:'Daniele B.',   ruolo:'farmacista', pin:'1111', attivo:true },
   { sigla:'VA', nome:'Valentina A.', ruolo:'farmacista', pin:'2222', attivo:true },
   { sigla:'MA', nome:'Marco A.',     ruolo:'assistente', pin:'3333', attivo:true },
 ];
@@ -1353,8 +1393,6 @@ var currentPazienteId   = null;
 var currentProtocolloId = null;
 var _firmaCanvasData    = null;   // base64 firma ricevente
 var _fotoPrep           = null;   // { data: base64, url: string|null } — foto terapia preparazione
-var _firmaPreparatore   = null;   // oggetto firma preparatore (sigla, nome, ts, img)
-var _firmaControllore   = null;   // oggetto firma controllore
 var _modalitaSelezionata= null;   // modalita dispensazione corrente
 var _dupSourceId        = null;   // id protocollo sorgente duplicazione
 var _dupChecked         = new Set();
@@ -1395,6 +1433,35 @@ function formatAge(s) {
 function genId(prefix) { return (prefix || 'ID') + Date.now() + Math.random().toString(36).slice(2,6).toUpperCase(); }
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function jsString(v) {
+  return JSON.stringify(String(v == null ? '' : v));
+}
+function normalizeRuolo(ruolo) {
+  return String(ruolo || '').trim().toLowerCase();
+}
+function isFarmacista(operatore) {
+  var r = normalizeRuolo(operatore && operatore.ruolo);
+  return r === 'farmacista' || r === 'farmacista e assistente';
+}
+function isAssistente(operatore) {
+  var r = normalizeRuolo(operatore && operatore.ruolo);
+  return r === 'assistente' || r === 'farmacista e assistente';
+}
+function canPreparare(operatore) {
+  return !!operatore && isFarmacista(operatore);
+}
+function canControllare(operatore) {
+  return !!operatore && (isFarmacista(operatore) || isAssistente(operatore));
+}
+function canDispensare(operatore) {
+  return !!operatore && (isFarmacista(operatore) || isAssistente(operatore));
+}
+async function verifyOperatorePin(op, pin) {
+  if (!op) return false;
+  if (op.pinHash && (await sha256(pin)) === op.pinHash) return true;
+  if (op.pin && pin === String(op.pin)) return true;
+  return false;
 }
 function getPaziente(id) { return DB.pazienti.find(function(p){ return p.id === id; }); }
 function getCP()          { return getPaziente(currentPazienteId); }
@@ -1477,7 +1544,6 @@ function loginPinDigit(d) {
   if (_loginPinBuffer.length >= 4) return;
   _loginPinBuffer += d;
   updateLoginDots();
-  if (_loginPinBuffer.length === 4) loginPinConfirm();
 }
 function loginPinClear() {
   _loginPinBuffer = _loginPinBuffer.slice(0,-1);
@@ -1494,16 +1560,11 @@ async function loginPinConfirm() {
   var sigla = document.getElementById('login-operatore').value;
   var errEl = document.getElementById('login-error');
   if (!sigla) { errEl.textContent='Seleziona un operatore'; _loginPinBuffer=''; updateLoginDots(); return; }
-  if (_loginPinBuffer.length < 4) { errEl.textContent='Inserisci 4 cifre'; return; }
+  if (_loginPinBuffer.length < 4) { errEl.textContent='Inserisci il PIN'; return; }
   var op = OPERATORI.find(function(o){ return o.sigla===sigla; });
   if (!op) { errEl.textContent='Operatore non trovato'; _loginPinBuffer=''; updateLoginDots(); return; }
 
-  var ok = false;
-  if (op.pinHash) {
-    ok = (await sha256(_loginPinBuffer)) === op.pinHash;
-  } else if (op.pin) {
-    ok = _loginPinBuffer === String(op.pin);
-  }
+  var ok = await verifyOperatorePin(op, _loginPinBuffer);
 
   if (!ok) {
     errEl.textContent='PIN errato — riprova';
@@ -1576,7 +1637,6 @@ function unlockSession(op) {
 function lockPinDigit(d) {
   if (_lockPinBuf.length>=4) return;
   _lockPinBuf+=d; updateLockDots();
-  if (_lockPinBuf.length===4) lockPinConfirm();
 }
 function lockPinClear() { _lockPinBuf=_lockPinBuf.slice(0,-1); updateLockDots(); document.getElementById('lock-error').textContent=''; }
 function updateLockDots() {
@@ -1588,14 +1648,12 @@ async function lockPinConfirm() {
   if(!sigla){errEl.textContent='Seleziona operatore';_lockPinBuf='';updateLockDots();return;}
   var op=OPERATORI.find(function(o){return o.sigla===sigla;});
   if(!op){errEl.textContent='Operatore non trovato';_lockPinBuf='';updateLockDots();return;}
-  var ok=false;
-  if(op.pinHash){ ok=(await sha256(_lockPinBuf))===op.pinHash; }
-  else if(op.pin){ ok=_lockPinBuf===String(op.pin); }
+  var ok = await verifyOperatorePin(op, _lockPinBuf);
   _lockPinBuf=''; updateLockDots();
   if(ok){ unlockSession(op); }
   else {
     errEl.textContent='PIN errato';
-    for(var i=0;i<4;i++){var dd=document.getElementById('lk'+i);if(dd){dd.classList.add('error');setTimeout((function(x){return function(){x.classList.remove('error');};}(dd)),600);}}
+    for(var i=0;i<5;i++){var dd=document.getElementById('lk'+i);if(dd){dd.classList.add('error');setTimeout((function(x){return function(){x.classList.remove('error');};}(dd)),600);}}
   }
 }
 
@@ -1617,8 +1675,13 @@ function apriPin(callback, titolo, sottotitolo, maxLen, filtroTipo) {
   var lista = OPERATORI.filter(function(o){
     if (o.attivo === false) return false;
     if (filtroTipo==='farmacista') {
-      var r = (o.ruolo||'').toLowerCase();
-      return r !== 'assistente' && r !== 'assistant';
+      return canPreparare(o);
+    }
+    if (filtroTipo==='controllo') {
+      return canControllare(o);
+    }
+    if (filtroTipo==='dispensazione') {
+      return canDispensare(o);
     }
     return true;
   });
@@ -1645,7 +1708,6 @@ function pinKey(k) {
   if (_pinBuffer.length >= _pinMaxLen) return;
   _pinBuffer += k;
   updatePinDots();
-  if (_pinBuffer.length === _pinMaxLen) setTimeout(verificaPin, 80);
 }
 
 function updatePinDots() {
@@ -1663,11 +1725,11 @@ async function verificaPin() {
   if (!op) { errEl.textContent='Operatore non trovato'; return; }
 
   // Verifica PIN — prova tutti i tipi disponibili per l'operatore
-  var pinOk = false;
-  if (op.pinFirmaHash) { pinOk = (await sha256(_pinBuffer))===op.pinFirmaHash; }
-  if (!pinOk && op.pin5)    { pinOk = _pinBuffer===String(op.pin5); }
-  if (!pinOk && op.pinHash) { pinOk = (await sha256(_pinBuffer))===op.pinHash; }
-  if (!pinOk && op.pin)     { pinOk = _pinBuffer===String(op.pin); }
+  if (_pinBuffer.length < 4) {
+    errEl.textContent='Inserisci il PIN completo';
+    return;
+  }
+  var pinOk = await verifyOperatorePin(op, _pinBuffer);
 
   if (!pinOk) {
     errEl.textContent='❌ PIN errato';
@@ -1679,7 +1741,7 @@ async function verificaPin() {
   var firma = { sigla:op.sigla, nome:op.nome, ruolo:op.ruolo, ts:nowStr() };
 
   // Recupera immagine firma se preparatore
-  if (_pinMaxLen===5 && op.firmaImg) firma.firmaImg = op.firmaImg;
+  if (op.firmaImg) firma.firmaImg = op.firmaImg;
 
   chiudiPin();
   dispatchPinCallback(firma, op);
@@ -1696,7 +1758,7 @@ function renderDashboard() {
   if (badge && currentOperatore) badge.textContent = currentOperatore.nome || currentOperatore.sigla;
 
   // Setup ricerca live
-  var si = document.getElementById('search-input');
+  var si = document.getElementById('dash-search-input');
   if (si) {
     si.value = '';
     si.oninput = function() { _aggiornaDashSearch(si.value.trim()); };
@@ -1828,7 +1890,7 @@ function renderVistaGiornaliera() {
 // LISTA PAZIENTI
 // ════════════════════════════════════════════
 function renderListaPazienti() {
-  var q = (document.getElementById('search-input').value||'').toLowerCase().trim();
+  var q = (document.getElementById('patient-search-input').value||'').toLowerCase().trim();
   var lista = DB.pazienti.filter(function(p){
     return (p.cognome+' '+p.nome+' '+p.ddn).toLowerCase().indexOf(q)!==-1;
   }).sort(function(a,b){ return (a.cognome+a.nome)<(b.cognome+b.nome)?-1:1; });
@@ -2359,8 +2421,11 @@ function proponiPeriodo() {
 
 function showNuovaPrep() {
   if (!currentPazienteId) return;
+  if (!canPreparare(currentOperatore)) {
+    showToast('Solo il farmacista può registrare una preparazione','error');
+    return;
+  }
   var p = getCP();
-  _firmaPreparatore = null;
   rimuoviFotoPrep();
 
   document.getElementById('prep-header-title').textContent = 'Nuova preparazione';
@@ -2379,9 +2444,6 @@ function showNuovaPrep() {
   document.getElementById('prep-note').value    = '';
   aggiornaQtaTotale();
   aggiornaPrepGiorniGrid();
-
-  document.getElementById('prep-firma-wrap').innerHTML =
-    '<button class="btn btn-primary btn-full" onclick="richiediFirmaPreparatore()">✍️ Firma come Preparatore</button>';
   document.getElementById('prep-btn-salva-wrap').style.display='none';
   document.getElementById('prep-btn-salva-wrap').innerHTML='';
   aggiornaStatoFirmaPrep();
@@ -2430,8 +2492,8 @@ function aggiornaPrepGiorniGrid() {
   }).join('');
 }
 
-function richiediFirmaPreparatore() {
-  // Validazione campi
+function salvaEProsegui() {
+  // Validazione campi obbligatori
   var farmaco = document.getElementById('prep-farmaco').value.trim();
   var dose    = parseFloat(document.getElementById('prep-dose').value);
   var lotto   = document.getElementById('prep-lotto').value.trim();
@@ -2439,7 +2501,9 @@ function richiediFirmaPreparatore() {
   var al      = document.getElementById('prep-al').value;
   if (!farmaco||!dose||!lotto||!dal||!al) { showToast('Compilare tutti i campi obbligatori (*)','error'); return; }
   if (dal>al) { showToast('La data di fine deve essere dopo la data di inizio','error'); return; }
-  apriPin('preparatore','✍️ Firma Preparatore','Seleziona il farmacista e inserisci il PIN',4,'farmacista');
+  if (!_fotoPrep) { showToast('Scatta la foto della terapia prima di salvare','error'); return; }
+  if (!currentOperatore) { logout(); return; }
+  salvaPreparazione();
 }
 
 // ════════════════════════════════════════════
@@ -2490,9 +2554,7 @@ function rimuoviFotoPrep() {
 }
 
 function aggiornaStatoFirmaPrep() {
-  var wrap = document.getElementById('prep-firma-wrap');
-  if (!wrap) return;
-  var btn = wrap.querySelector('button');
+  var btn = document.getElementById('prep-salva-btn');
   if (!btn) return;
   if (!_fotoPrep) {
     btn.disabled = true;
@@ -2519,8 +2581,8 @@ async function uploadFotoPrep(base64) {
 }
 
 function salvaPreparazione() {
-  if (!_firmaPreparatore) { showToast('Firma preparatore mancante','error'); return; }
   if (!_fotoPrep) { showToast('Scatta la foto della terapia prima di salvare','error'); return; }
+  if (!currentOperatore) { logout(); return; }
   var p = getCP();
   if (!p) return;
 
@@ -2531,6 +2593,8 @@ function salvaPreparazione() {
   var ng     = calcolaGiorniCoperti(dal,al).length;
   var mgSett = dose * (7 - pausa);
   var qtaTot = Math.round(mgSett * ng / 7);
+
+  var firmaPrep = { sigla: currentOperatore.sigla, nome: currentOperatore.nome, ruolo: currentOperatore.ruolo, ts: nowStr() };
 
   var pr = {
     id: genId('PROT'),
@@ -2548,27 +2612,24 @@ function salvaPreparazione() {
     lotto:         document.getElementById('prep-lotto').value.trim(),
     note:          document.getElementById('prep-note').value.trim(),
     stato:         'preparato',
-    preparatore:   _firmaPreparatore,
+    preparatore:   firmaPrep,
     controllore:   null,
     dispensazione: null,
     fotoUrl:       null,
-    auditTrail:    [{ tipo:'creazione', op:_firmaPreparatore.sigla, ts:nowStr(), dettaglio:'Preparazione creata ('+dose+' mg/die × (7−'+pausa+') × '+ng+'/7 gg = '+qtaTot+' mg tot.)' }]
+    auditTrail:    [{ tipo:'creazione', op:firmaPrep.sigla, ts:nowStr(), dettaglio:'Preparazione creata ('+dose+' mg/die × (7−'+pausa+') × '+ng+'/7 gg = '+qtaTot+' mg tot.)' }]
   };
 
   DB.protocolli.push(pr);
   sincronizzaProtocollo(pr);
 
   var fotoData = _fotoPrep ? _fotoPrep.data : null;
-  var firmaPrep = _firmaPreparatore;
-  _firmaPreparatore = null;
   _fotoPrep = null;
 
-  // Modal di conferma con riepilogo
-  var pazId = p.id;
+  // Modal riepilogo
   mostraModal(
     '<div style="text-align:center;padding:8px 0 16px">' +
     '<div style="font-size:48px;margin-bottom:8px">✅</div>' +
-    '<div style="font-size:20px;font-weight:700;color:var(--accent-dark);margin-bottom:4px">Preparazione pronta per la consegna</div>' +
+    '<div style="font-size:20px;font-weight:700;color:var(--accent-dark);margin-bottom:4px">Preparazione salvata</div>' +
     '<div style="font-size:13px;color:var(--text2);margin-bottom:20px">' + escHtml(p.cognome + ' ' + p.nome) + '</div>' +
     '</div>' +
     '<div class="info-row"><span class="info-key">Farmaco</span><span class="info-val">' + escHtml(pr.farmaco) + '</span></div>' +
@@ -2580,8 +2641,9 @@ function salvaPreparazione() {
     '<div class="info-row"><span class="info-key">Qtà totale preparata</span><span class="info-val" style="font-family:var(--mono);font-weight:700;color:var(--accent-dark)">' + qtaTot + ' mg</span></div>' +
     '<div class="info-row"><span class="info-key">Lotto</span><span class="info-val" style="font-family:var(--mono)">' + escHtml(pr.lotto) + '</span></div>' +
     '<div class="info-row"><span class="info-key">Preparatore</span><span class="info-val">' + escHtml(firmaPrep.nome + ' (' + firmaPrep.sigla + ')') + '</span></div>' +
-    '<div style="margin-top:20px">' +
-    '<button class="btn btn-primary btn-full" onclick="chiudiModal();openPaziente(\'' + pazId + '\')">OK — Torna alla scheda paziente</button>' +
+    '<div style="display:flex;gap:10px;margin-top:20px">' +
+    '<button class="btn btn-ghost" style="flex:1" onclick="chiudiModal();logout()">🚪 Esci</button>' +
+    '<button class="btn btn-primary" style="flex:1" onclick="chiudiModal();openProtocolloControllo(\'' + pr.id + '\')">🔍 Controlla la preparazione</button>' +
     '</div>'
   );
 
@@ -2609,6 +2671,9 @@ function salvaPreparazione() {
 // ════════════════════════════════════════════
 // CONTROLLO
 // ════════════════════════════════════════════
+var _ctrlPinBuffer  = '';
+var _ctrlPinOk      = false;
+
 function openProtocolloControllo(protId) {
   if (!currentOperatore) { logout(); return; }
   currentProtocolloId = protId;
@@ -2620,46 +2685,161 @@ function openProtocolloControllo(protId) {
 
   // Riepilogo
   var giorni = (pr.giorniCoperti||[]).map(function(g){ return '<div class="giorno-cell">'+formatDateShort(g)+'</div>'; }).join('');
+  var pausa = pr.pausa > 0 ? '<div class="info-row"><span class="info-key">Pausa</span><span class="info-val" style="font-family:var(--mono)">'+pr.pausa+' giorno/i per sett.</span></div>' : '';
   document.getElementById('ctrl-riepilogo').innerHTML =
     '<div class="card-title">DATI PROTOCOLLO</div>'+
     '<div class="info-row"><span class="info-key">Paziente</span><span class="info-val">'+escHtml(pz.cognome+' '+pz.nome)+'</span></div>'+
     '<div class="info-row"><span class="info-key">Farmaco</span><span class="info-val">'+escHtml(pr.farmaco)+'</span></div>'+
+    '<div class="info-row"><span class="info-key">Forma</span><span class="info-val">'+escHtml(pr.forma||'')+'</span></div>'+
     '<div class="info-row"><span class="info-key">Dose</span><span class="info-val" style="font-family:var(--mono);font-weight:700;color:var(--accent-dark)">'+pr.dose+' mg/die</span></div>'+
-    '<div class="info-row"><span class="info-key">Qtà totale</span><span class="info-val" style="font-family:var(--mono)">'+pr.qtaTotale+' mg</span></div>'+
+    pausa+
+    '<div class="info-row"><span class="info-key">mg/settimana</span><span class="info-val" style="font-family:var(--mono)">'+(pr.mgSettimana||'—')+' mg</span></div>'+
+    '<div class="info-row"><span class="info-key">Qtà totale</span><span class="info-val" style="font-family:var(--mono);font-weight:700">'+pr.qtaTotale+' mg</span></div>'+
     '<div class="info-row"><span class="info-key">Periodo</span><span class="info-val">'+formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl)+'</span></div>'+
+    '<div class="info-row"><span class="info-key">Durata</span><span class="info-val" style="font-family:var(--mono)">'+(pr.giorniCoperti||[]).length+' giorni</span></div>'+
     '<div class="info-row"><span class="info-key">Lotto</span><span class="info-val" style="font-family:var(--mono)">'+escHtml(pr.lotto)+'</span></div>'+
     '<div style="margin-top:8px"><div class="form-label">Giorni coperti</div><div class="giorni-grid">'+giorni+'</div></div>'+
     (pr.note ? '<div class="note-box" style="margin-top:8px">📝 '+escHtml(pr.note)+'</div>' : '')+
     '<div class="divider" style="margin:12px 0"></div>'+
-    firmaBox(pr.preparatore,'✍️');
+    '<div class="form-label" style="margin-bottom:4px">Preparatore</div>'+firmaBox(pr.preparatore,'✍️');
 
-  _firmaControllore = null;
-  document.getElementById('ctrl-firma-wrap').innerHTML =
-    '<button class="btn btn-info btn-full" onclick="richiediFirmaControllore()">🔍 Firma come Controllore</button>';
-  document.getElementById('ctrl-btn-conferma').style.display='none';
-  document.getElementById('ctrl-btn-conferma').innerHTML='';
+  // Popola select controllori (farmacista o assistente)
+  var sel = document.getElementById('ctrl-operatore-sel');
+  sel.innerHTML = '<option value="">— Seleziona operatore —</option>'+
+    OPERATORI.filter(function(o){ return o.attivo!==false && canControllare(o); })
+             .map(function(o){ return '<option value="'+o.sigla+'">'+escHtml(o.nome)+' ('+escHtml(o.ruolo)+')</option>'; }).join('');
+
+  // Reset stato
+  _ctrlPinBuffer = '';
+  _ctrlPinOk = false;
+  document.getElementById('ctrl-pin-wrap').style.display = 'none';
+  document.getElementById('ctrl-stesso-warn').style.display = 'none';
+  document.getElementById('ctrl-pin-error').textContent = '';
+  ctrlUpdateDots();
+  ctrlAggiornaPulsante();
 
   showScreen('screen-controllo');
 }
 
-function richiediFirmaControllore() {
-  apriPin('controllore','🔍 Firma Controllore','PIN 4 cifre del controllore',4);
+function ctrlOnOperatoreChange() {
+  _ctrlPinBuffer = '';
+  _ctrlPinOk = false;
+  document.getElementById('ctrl-pin-error').textContent = '';
+  ctrlUpdateDots();
+
+  var sigla = document.getElementById('ctrl-operatore-sel').value;
+  var pr = getCP_prot();
+  var stessoOp = !!(sigla && pr && pr.preparatore && pr.preparatore.sigla === sigla);
+
+  document.getElementById('ctrl-pin-wrap').style.display = sigla ? '' : 'none';
+  var warnEl = document.getElementById('ctrl-stesso-warn');
+  warnEl.style.display = stessoOp ? '' : 'none';
+  if (!stessoOp) {
+    var cb = document.getElementById('ctrl-stesso-check');
+    if (cb) cb.checked = false;
+  }
+  ctrlAggiornaPulsante();
+}
+
+function ctrlPinKey(k) {
+  var errEl = document.getElementById('ctrl-pin-error');
+  if (k === 'del') {
+    _ctrlPinBuffer = _ctrlPinBuffer.slice(0,-1);
+    _ctrlPinOk = false;
+    ctrlAggiornaPulsante();
+    ctrlUpdateDots(); return;
+  }
+  if (k === 'ok') { ctrlVerificaPin(); return; }
+  if (_ctrlPinBuffer.length >= 4) return;
+  _ctrlPinBuffer += k;
+  errEl.textContent = '';
+  ctrlUpdateDots();
+}
+
+function ctrlUpdateDots() {
+  for (var i=0; i<4; i++) {
+    var d = document.getElementById('cpd'+i);
+    if (d) d.className = 'pin-dot-sm' + (i < _ctrlPinBuffer.length ? ' filled' : '');
+  }
+}
+
+async function ctrlVerificaPin() {
+  var errEl = document.getElementById('ctrl-pin-error');
+  var sigla = document.getElementById('ctrl-operatore-sel').value;
+  if (!sigla) { errEl.textContent = 'Seleziona un operatore'; return; }
+  if (_ctrlPinBuffer.length < 4) { errEl.textContent = 'Inserisci 4 cifre'; return; }
+  var op = OPERATORI.find(function(o){ return o.sigla === sigla; });
+  if (!op) { errEl.textContent = 'Operatore non trovato'; return; }
+
+  var ok = await verifyOperatorePin(op, _ctrlPinBuffer);
+  if (!ok) {
+    errEl.textContent = '❌ PIN errato';
+    for (var i=0; i<4; i++) {
+      var d = document.getElementById('cpd'+i);
+      if (d) { d.classList.add('error'); setTimeout((function(x){ return function(){ x.classList.remove('error'); }; }(d)), 600); }
+    }
+    _ctrlPinBuffer = ''; ctrlUpdateDots(); return;
+  }
+  _ctrlPinOk = true;
+  errEl.textContent = '';
+  ctrlAggiornaPulsante();
+  showToast('PIN verificato ✓', 'success');
+}
+
+function ctrlAggiornaPulsante() {
+  var btn = document.getElementById('ctrl-conferma-btn');
+  if (!btn) return;
+  var sigla = document.getElementById('ctrl-operatore-sel').value;
+  var pr = getCP_prot();
+  var stessoOp = !!(sigla && pr && pr.preparatore && pr.preparatore.sigla === sigla);
+  var checkOk = !stessoOp || !!(document.getElementById('ctrl-stesso-check') && document.getElementById('ctrl-stesso-check').checked);
+  var abilitato = _ctrlPinOk && !!sigla && checkOk;
+  btn.disabled = !abilitato;
+  btn.style.opacity = abilitato ? '' : '0.4';
 }
 
 function salvaControllo() {
-  if (!_firmaControllore) { showToast('Firma controllore mancante','error'); return; }
+  var sigla = document.getElementById('ctrl-operatore-sel').value;
   var pr = getCP_prot();
-  if (!pr) { showToast('Protocollo non trovato','error'); return; }
+  var pz = pr ? getPaziente(pr.pazienteId) : null;
+  if (!pr||!pz) { showToast('Protocollo non trovato','error'); return; }
+  if (!_ctrlPinOk||!sigla) { showToast('Verifica il PIN prima di confermare','error'); return; }
 
-  pr.stato       = 'controllato';
-  pr.controllore = _firmaControllore;
-  pr.auditTrail.push({ tipo:'controllo', op:_firmaControllore.sigla, ts:nowStr(), dettaglio:'Controllo eseguito e approvato' });
+  var op = OPERATORI.find(function(o){ return o.sigla===sigla; });
+  var firma = { sigla: sigla, nome: op?op.nome:sigla, ruolo: op?op.ruolo:'', ts: nowStr() };
+  var stessoOp = !!(pr.preparatore && pr.preparatore.sigla === sigla);
+
+  pr.stato      = 'controllato';
+  pr.controllore = firma;
+  pr.auditTrail.push({ tipo:'controllo', op:sigla, ts:nowStr(), dettaglio:'Controllo approvato'+(stessoOp?' (stesso operatore del preparatore)':'') });
 
   sincronizzaProtocollo(pr);
-  _firmaControllore = null;
-  showToast('Controllo registrato ✓','success');
-  renderDashboard();
-  showScreen('screen-dashboard');
+  _ctrlPinOk = false;
+  _ctrlPinBuffer = '';
+
+  // Modal riepilogo post-controllo
+  var giorni = (pr.giorniCoperti||[]).map(function(g){ return '<div class="giorno-cell">'+formatDateShort(g)+'</div>'; }).join('');
+  mostraModal(
+    '<div style="text-align:center;padding:8px 0 12px">'+
+    '<div style="font-size:48px;margin-bottom:8px">✅</div>'+
+    '<div style="font-size:20px;font-weight:700;color:var(--accent-dark);margin-bottom:4px">La preparazione è pronta per la consegna</div>'+
+    '<div style="font-size:13px;color:var(--text2);margin-bottom:16px">'+escHtml(pz.cognome+' '+pz.nome)+'</div>'+
+    '</div>'+
+    '<div class="info-row"><span class="info-key">Farmaco</span><span class="info-val">'+escHtml(pr.farmaco)+'</span></div>'+
+    '<div class="info-row"><span class="info-key">Dose</span><span class="info-val" style="font-family:var(--mono);font-weight:700;color:var(--accent-dark)">'+pr.dose+' mg/die</span></div>'+
+    '<div class="info-row"><span class="info-key">Qtà totale</span><span class="info-val" style="font-family:var(--mono)">'+pr.qtaTotale+' mg</span></div>'+
+    '<div class="info-row"><span class="info-key">Periodo</span><span class="info-val" style="font-family:var(--mono)">'+formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl)+'</span></div>'+
+    '<div class="info-row"><span class="info-key">Lotto</span><span class="info-val" style="font-family:var(--mono)">'+escHtml(pr.lotto)+'</span></div>'+
+    '<div style="margin-top:6px"><div class="form-label">Giorni coperti</div><div class="giorni-grid">'+giorni+'</div></div>'+
+    '<div class="divider" style="margin:12px 0"></div>'+
+    '<div class="form-label" style="margin-bottom:4px">Preparatore</div>'+firmaBox(pr.preparatore,'✍️')+
+    '<div class="form-label" style="margin-bottom:4px;margin-top:8px">Controllore</div>'+firmaBox(pr.controllore,'🔍')+
+    (stessoOp ? '<div class="alert-box alert-warning" style="margin-top:8px">⚠️ Preparatore e controllore coincidono</div>' : '')+
+    '<div style="display:flex;gap:10px;margin-top:20px">'+
+    '<button class="btn btn-ghost" style="flex:1" onclick="chiudiModal();renderDashboard();showScreen(\'screen-dashboard\')">🚪 Esci</button>'+
+    '<button class="btn btn-primary" style="flex:1" onclick="chiudiModal();openProtocolloDispensazione(\''+pr.id+'\')">💊 Procedi alla dispensazione</button>'+
+    '</div>'
+  );
 }
 
 // ════════════════════════════════════════════
@@ -2667,6 +2847,7 @@ function salvaControllo() {
 // ════════════════════════════════════════════
 function openProtocolloDispensazione(protId) {
   if (!currentOperatore) { logout(); return; }
+  if (!canDispensare(currentOperatore)) { showToast('Operatore non autorizzato alla dispensazione','error'); return; }
   currentProtocolloId = protId;
   var pr = getProtocollo(protId);
   var pz = pr ? getPaziente(pr.pazienteId) : null;
@@ -2831,8 +3012,37 @@ function salvaDispensazione(firmaImg) {
     dettaglio:'Dispensato — '+modalitaLabel(_modalitaSelezionata)+(delNome?' — Delegato: '+delNome:'')+(firmaImg?' — Firma acquisita':'') });
 
   sincronizzaProtocollo(pr);
-  showToast('Dispensazione registrata ✓','success');
-  openPaziente(pr.pazienteId);
+
+  var pz = getPaziente(pr.pazienteId);
+  var d = pr.dispensazione;
+
+  mostraModal(
+    '<div style="text-align:center;padding:12px 0 8px">'+
+    '<div style="font-size:13px;color:var(--text2);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px">Dispensazione registrata</div>'+
+    '<div style="font-size:32px;font-weight:800;color:var(--accent-dark);line-height:1.1;margin-bottom:6px">'+escHtml(pz?pz.cognome+' '+pz.nome:'—')+'</div>'+
+    '<div style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:2px">'+d.ts+'</div>'+
+    '</div>'+
+    '<div class="divider" style="margin:12px 0"></div>'+
+    '<div class="info-row"><span class="info-key">Farmaco</span><span class="info-val">'+escHtml(pr.farmaco)+'</span></div>'+
+    '<div class="info-row"><span class="info-key">Dose</span><span class="info-val" style="font-family:var(--mono);font-weight:700;color:var(--accent-dark)">'+pr.dose+' mg/die</span></div>'+
+    '<div class="info-row"><span class="info-key">Periodo</span><span class="info-val" style="font-family:var(--mono)">'+formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl)+'</span></div>'+
+    '<div class="info-row"><span class="info-key">Durata</span><span class="info-val" style="font-family:var(--mono)">'+(pr.giorniCoperti||[]).length+' giorni</span></div>'+
+    '<div class="info-row" style="background:var(--accent-light);border-radius:8px;padding:10px 12px;margin:8px 0"><span class="info-key" style="font-weight:700">Totale mg dispensati</span><span class="info-val" style="font-family:var(--mono);font-size:20px;font-weight:800;color:var(--accent-dark)">'+pr.qtaTotale+' mg</span></div>'+
+    '<div class="info-row"><span class="info-key">Modalità</span><span class="info-val">'+modalitaIcon(d.modalita)+' '+escHtml(modalitaLabel(d.modalita))+'</span></div>'+
+    (d.delegatoNome?'<div class="info-row"><span class="info-key">Delegato</span><span class="info-val">'+escHtml(d.delegatoNome)+'</span></div>':'')+
+    (d.nota?'<div class="info-row"><span class="info-key">Nota</span><span class="info-val">'+escHtml(d.nota)+'</span></div>':'')+
+    '<div class="info-row"><span class="info-key">Operatore</span><span class="info-val">'+escHtml(d.operatore)+'</span></div>'+
+    (firmaImg?
+      '<div class="divider" style="margin:12px 0"></div>'+
+      '<div style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Firma del ricevente</div>'+
+      '<div style="background:#fff;border:2px solid var(--border);border-radius:8px;padding:8px;text-align:center">'+
+      '<img src="'+firmaImg+'" style="max-width:100%;max-height:120px;display:block;margin:0 auto" alt="Firma">'+
+      '</div>'
+    : '')+
+    '<div style="margin-top:20px">'+
+    '<button class="btn btn-primary btn-full btn-lg" onclick="chiudiModal();logout()">OK — Esci dall\'app</button>'+
+    '</div>'
+  );
 }
 
 // ════════════════════════════════════════════
@@ -2927,10 +3137,7 @@ function confermaDuplica() {
   aggiornaQtaTotale();
   aggiornaPrepGiorniGrid();
 
-  _firmaPreparatore=null;
   rimuoviFotoPrep();
-  document.getElementById('prep-firma-wrap').innerHTML=
-    '<button class="btn btn-primary btn-full" onclick="richiediFirmaPreparatore()">✍️ Firma come Preparatore</button>';
   document.getElementById('prep-btn-salva-wrap').style.display='none';
   document.getElementById('prep-btn-salva-wrap').innerHTML='';
   aggiornaStatoFirmaPrep();
@@ -2944,39 +3151,7 @@ function confermaDuplica() {
 }
 
 function dispatchPinCallback(firma, op) {
-  if (_pinCallback==='preparatore') {
-    _firmaPreparatore = firma;
-    var wrap = document.getElementById('prep-firma-wrap');
-    if (wrap) wrap.innerHTML = firmaBox(firma, '✍️');
-    // Mostra bottone salva
-    var btnWrap = document.getElementById('prep-btn-salva-wrap');
-    if (btnWrap) {
-      btnWrap.style.display='';
-      btnWrap.innerHTML = '<button class="btn btn-primary btn-full btn-lg" onclick="salvaPreparazione()">💾 Salva preparazione</button>';
-    }
-    showToast('Firma preparatore registrata ✓', 'success');
-
-  } else if (_pinCallback==='controllore') {
-    // Verifica separazione ruoli
-    var protCorr = getProtocollo(currentProtocolloId);
-    if (protCorr && protCorr.preparatore && protCorr.preparatore.sigla===firma.sigla) {
-      showToast('Il controllore non può essere il preparatore', 'error');
-      document.getElementById('ctrl-firma-wrap').innerHTML =
-        '<div class="alert-box alert-danger">❌ Selezionare un operatore diverso dal preparatore.</div>'
-        + '<button class="btn btn-info btn-full" style="margin-top:8px" onclick="richiediFirmaControllore()">🔍 Riprova</button>';
-      return;
-    }
-    _firmaControllore = firma;
-    var ctrlWrap = document.getElementById('ctrl-firma-wrap');
-    if (ctrlWrap) ctrlWrap.innerHTML = firmaBox(firma, '🔍');
-    var ctrlBtn = document.getElementById('ctrl-btn-conferma');
-    if (ctrlBtn) {
-      ctrlBtn.style.display='';
-      ctrlBtn.innerHTML='<button class="btn btn-primary btn-full btn-lg" onclick="salvaControllo()">✅ Conferma controllo</button>';
-    }
-    showToast('Firma controllore registrata ✓', 'success');
-
-  } else if (_pinCallback && _pinCallback.indexOf('annulla:')===0) {
+  if (_pinCallback && _pinCallback.indexOf('annulla:')===0) {
     var protId = _pinCallback.split(':')[1];
     var motivoTxt = window._annulloMotivoPending || '';
     window._annulloMotivoPending = '';
@@ -3125,7 +3300,7 @@ function generaPDFDispensazione(protId) {
 function renderOperatori() {
   var el=document.getElementById('operatori-list'); if(!el)return;
   el.innerHTML=OPERATORI.map(function(o,i){
-    var tl=o.tipo==='preparatore'?'🖊 Preparatore (PIN 5)':'🔍 Controllore (PIN 4)';
+    var tl=isFarmacista(o)?'Preparazione, controllo, dispensazione':'Controllo e dispensazione';
     return '<div class="operatore-row">'+
       '<div class="op-avatar">'+o.sigla+'</div>'+
       '<div class="op-info"><div class="op-nome">'+escHtml(o.nome)+'</div>'+
@@ -3142,34 +3317,28 @@ function showModalNuovoOperatore(){
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
     '<div class="form-group"><label class="form-label">Sigla (2-3 car.) *</label><input type="text" class="form-input" id="new-op-sigla" maxlength="3" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>'+
     '<div class="form-group"><label class="form-label">Ruolo</label><select class="form-select" id="new-op-ruolo"><option>Farmacista</option><option>Assistente</option></select></div></div>'+
-    '<div class="form-group"><label class="form-label">Tipo</label><select class="form-select" id="new-op-tipo" onchange="aggiornaInputPin()">'+
-    '<option value="controllore">Controllore (PIN 4 cifre)</option>'+
-    '<option value="preparatore">Preparatore (PIN 5 cifre)</option></select></div>'+
-    '<div class="form-group" id="pin-input-group"><label class="form-label" id="pin-input-label">PIN (4 cifre) *</label>'+
+    '<div class="form-group" id="pin-input-group"><label class="form-label" id="pin-input-label">PIN operatore (4 cifre) *</label>'+
     '<input type="password" class="form-input" id="new-op-pin" maxlength="4" inputmode="numeric" pattern="[0-9]*"></div>'+
     '<button class="btn btn-primary btn-full" style="margin-top:8px" onclick="salvaOperatore()">✅ Aggiungi operatore</button>');
 }
 
 function aggiornaInputPin(){
-  var t=document.getElementById('new-op-tipo').value;
   var l=document.getElementById('pin-input-label'); var i=document.getElementById('new-op-pin');
-  if(t==='preparatore'){l.textContent='PIN (5 cifre) *';i.maxLength=5;}
-  else{l.textContent='PIN (4 cifre) *';i.maxLength=4;}
+  if(l) l.textContent='PIN operatore (4 cifre) *';
+  if(i) i.maxLength=4;
 }
 
 async function salvaOperatore(){
   var nome=(document.getElementById('new-op-nome')||{value:''}).value.trim();
   var sigla=(document.getElementById('new-op-sigla')||{value:''}).value.trim().toUpperCase();
   var ruolo=(document.getElementById('new-op-ruolo')||{value:'Farmacista'}).value;
-  var tipo=(document.getElementById('new-op-tipo')||{value:'controllore'}).value;
   var pin=(document.getElementById('new-op-pin')||{value:''}).value.trim();
-  var pl=tipo==='preparatore'?5:4;
   if(!nome||!sigla||!pin){showToast('Compila tutti i campi','error');return;}
-  if(!new RegExp('^\\d{'+pl+'}$').test(pin)){showToast('PIN deve essere '+pl+' cifre','error');return;}
+  if(!/^\d{4}$/.test(pin)){showToast('PIN deve essere di esattamente 4 cifre','error');return;}
   if(OPERATORI.find(function(o){return o.sigla===sigla;})){showToast('Sigla già in uso','error');return;}
   var op={sigla:sigla,nome:nome,ruolo:ruolo,attivo:true};
-  if(FIREBASE_ENABLED&&firestoreDB){var h=await sha256(pin);if(tipo==='preparatore')op.pinFirmaHash=h;else op.pinHash=h;firestoreDB.collection('operatori').doc(sigla).set(op,{merge:true}).catch(function(e){console.error(e);});}
-  else{if(tipo==='preparatore')op.pin5=pin;else op.pin=pin;}
+  if(FIREBASE_ENABLED&&firestoreDB){var h=await sha256(pin);op.pinHash=h;firestoreDB.collection('operatori').doc(sigla).set(op,{merge:true}).catch(function(e){console.error(e);});}
+  else{op.pin=pin;}
   OPERATORI.push(op);chiudiModal();renderOperatori();showToast(nome+' aggiunto ✓','success');
 }
 
@@ -3269,7 +3438,7 @@ function sgBuildCard(pr) {
   var nome = sgNomePaziente(pr);
   var fotoHtml = '';
   if (pr.fotoUrl) {
-    fotoHtml = '<div class="sg-card-foto"><img src="'+escHtml(pr.fotoUrl)+'" alt="Foto terapia" onclick="window.open(\''+escHtml(pr.fotoUrl)+'\',\'_blank\')"></div>';
+    fotoHtml = '<div class="sg-card-foto"><img src="'+escHtml(pr.fotoUrl)+'" alt="Foto terapia" onclick="window.open('+jsString(pr.fotoUrl)+',\'_blank\')"></div>';
   } else {
     fotoHtml = '<div class="sg-card-foto"><span class="sg-foto-placeholder">Nessuna foto disponibile</span></div>';
   }
@@ -3314,7 +3483,7 @@ function sgRender() {
     Object.keys(byP).sort().forEach(function(nome) {
       var list = byP[nome];
       html += '<div class="sg-group">👤 '+escHtml(nome)+' ('+list.length+')</div>';
-      html += '<div class="sg-item" onclick="sgMostraPaziente(\''+escHtml(nome)+'\')">'
+      html += '<div class="sg-item" onclick="sgMostraPaziente('+jsString(nome)+')">'
         +'<div class="sg-item-nome">'+escHtml(nome)+'</div>'
         +'<div class="sg-item-sub">'+list.length+' preparazioni</div>'
         +'</div>';
@@ -3336,7 +3505,7 @@ function sgRender() {
     keys.forEach(function(d) {
       var list = byD[d];
       html += '<div class="sg-group">📆 '+escHtml(d)+'</div>';
-      html += '<div class="sg-item" onclick="sgMostraData(\''+escHtml(d)+'\')">'
+      html += '<div class="sg-item" onclick="sgMostraData('+jsString(d)+')">'
         +'<div class="sg-item-nome">'+escHtml(d)+'</div>'
         +'<div class="sg-item-sub">'+list.length+' preparazioni</div>'
         +'</div>';
@@ -3372,7 +3541,7 @@ document.addEventListener('DOMContentLoaded', function() {
     new Date().toLocaleDateString('it-CH', {weekday:'long',day:'numeric',month:'long'});
 
   // Event listener ricerca pazienti
-  var si = document.getElementById('search-input');
+  var si = document.getElementById('patient-search-input');
   if (si) si.addEventListener('input', renderListaPazienti);
 
   loadData().then(function(){
