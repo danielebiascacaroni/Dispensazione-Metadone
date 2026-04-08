@@ -407,7 +407,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <!-- Pulsanti azione -->
     <div style="display:flex;gap:10px;margin-bottom:14px">
       <button class="fab" style="position:static;width:44px;height:44px;font-size:16px" onclick="openStoricoGlobale()" title="Storico generale">📜</button>
-      <button class="fab" style="position:static;width:44px;height:44px;font-size:16px" onclick="showScreen('screen-vista-giornaliera');renderVistaGiornaliera()" title="Vista giornaliera">📋</button>
+      <button class="fab" style="position:static;width:44px;height:44px;font-size:16px" onclick="showScreen('screen-vista-giornaliera');(function(){var t=todayISO();document.getElementById('vista-data-input').value=t;renderVistaGiornaliera(t);})()" title="Ricerca per data">📋</button>
       <button class="fab" style="position:static;width:44px;height:44px;font-size:16px" onclick="showScreen('screen-operatori');renderOperatori()" title="Operatori">⚙️</button>
       <button class="fab" style="position:static;width:44px;height:44px;font-size:16px;margin-left:auto" onclick="showNuovoPaziente()">+</button>
     </div>
@@ -466,7 +466,13 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <div id="sg-loading" style="text-align:center;padding:40px;color:var(--text3);display:none">Caricamento...</div>
     <div id="sg-view-crono"></div>
     <div id="sg-view-paziente" style="display:none"></div>
-    <div id="sg-view-data"    style="display:none"></div>
+    <div id="sg-view-data" style="display:none">
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Seleziona data</label>
+        <input type="date" class="form-input" id="sg-data-input" onchange="sgFiltroData(this.value)">
+      </div>
+      <div id="sg-data-risultati"></div>
+    </div>
     <div style="height:40px"></div>
   </div>
 </div>
@@ -491,12 +497,13 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 <div id="screen-vista-giornaliera" class="screen">
   <div class="header">
     <button class="header-back" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
-    <div style="flex:1">
-      <div class="header-title">Vista giornaliera</div>
-      <div class="header-subtitle" id="vista-date-subtitle"></div>
-    </div>
+    <div class="header-title">Ricerca per data</div>
   </div>
   <div class="content">
+    <div class="form-group" style="margin-bottom:16px">
+      <label class="form-label">Seleziona data</label>
+      <input type="date" class="form-input" id="vista-data-input" onchange="renderVistaGiornaliera(this.value)">
+    </div>
     <div id="vista-list"></div>
     <div style="height:30px"></div>
   </div>
@@ -1843,47 +1850,19 @@ function renderDaControllare() {
 // ════════════════════════════════════════════
 // VISTA GIORNALIERA
 // ════════════════════════════════════════════
-function renderVistaGiornaliera() {
-  var today = todayISO();
-  document.getElementById('vista-date-subtitle').textContent =
-    new Date().toLocaleDateString('it-CH', {weekday:'long',day:'numeric',month:'long'});
-
-  // Tutti i protocolli con today nel periodo (controllato o già dispensato)
-  var lista = DB.protocolli.filter(function(pr){
-    return pr.periodoDal<=today && pr.periodoAl>=today && pr.stato!=='annullato';
-  }).sort(function(a,b){
-    var pa=getPaziente(a.pazienteId), pb=getPaziente(b.pazienteId);
-    if (!pa||!pb) return 0;
-    return (pa.cognome+pa.nome)<(pb.cognome+pb.nome)?-1:1;
-  });
-
-  var el = document.getElementById('vista-list');
-  if (!lista.length) {
-    el.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>Nessun protocollo per oggi</p></div>';
-    return;
+function renderVistaGiornaliera(val) {
+  var input = document.getElementById('vista-data-input');
+  var el    = document.getElementById('vista-list');
+  if (!val) { el.innerHTML = ''; return; }
+  // Usa _sgProtocolli se già caricati da Firestore, altrimenti DB locale
+  var source = (_sgProtocolli && _sgProtocolli.length) ? _sgProtocolli : DB.protocolli;
+  var list = source.filter(function(pr){ return pr.dataPreprazione === val; });
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📆</div><p>Nessuna preparazione registrata per il '+escHtml(formatDate(val))+'</p></div>';
+  } else {
+    el.innerHTML = '<div class="sg-group">'+list.length+' preparazion'+(list.length===1?'e':'i')+' del '+escHtml(formatDate(val))+'</div>'
+      + list.map(sgBuildCard).join('');
   }
-
-  el.innerHTML = lista.map(function(pr){
-    var pz = getPaziente(pr.pazienteId);
-    if (!pz) return '';
-    var statoIcon = pr.stato==='dispensato' ? '✅' : pr.stato==='controllato' ? '📦' : '⏳';
-    var actionBtn = pr.stato==='controllato'
-      ? '<button class="btn btn-primary btn-sm" onclick="openProtocolloDispensazione(\''+pr.id+'\')">Dispensa</button>'
-      : pr.stato==='dispensato'
-      ? '<span class="stato-dispensato">DISPENSATO</span>'
-      : '<span class="stato-'+pr.stato+'">'+pr.stato.toUpperCase()+'</span>';
-
-    return '<div class="card" style="margin-bottom:10px">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-      '<div>'+
-      '<div style="font-size:17px;font-weight:700">'+statoIcon+' '+escHtml(pz.cognome)+' '+escHtml(pz.nome)+'</div>'+
-      '<div style="font-size:13px;color:var(--text2);margin-top:2px">'+escHtml(pr.farmaco)+' · '+pr.dose+'mg/die</div>'+
-      '<div style="font-size:13px;color:var(--text2)">'+modalitaIcon(pz.modalitaUsuale)+' '+modalitaLabel(pz.modalitaUsuale)+'</div>'+
-      '</div>'+actionBtn+
-      '</div>'+
-      (pr.note ? '<div class="note-box" style="margin-top:8px">'+escHtml(pr.note)+'</div>' : '')+
-      '</div>';
-  }).join('');
 }
 
 // ════════════════════════════════════════════
@@ -3436,21 +3415,30 @@ function sgNomePaziente(pr) {
 
 function sgBuildCard(pr) {
   var nome = sgNomePaziente(pr);
-  var fotoHtml = '';
-  if (pr.fotoUrl) {
-    fotoHtml = '<div class="sg-card-foto"><img src="'+escHtml(pr.fotoUrl)+'" alt="Foto terapia" onclick="window.open('+jsString(pr.fotoUrl)+',\'_blank\')"></div>';
-  } else {
-    fotoHtml = '<div class="sg-card-foto"><span class="sg-foto-placeholder">Nessuna foto disponibile</span></div>';
+  var fotoHtml = pr.fotoUrl
+    ? '<div class="sg-card-foto"><img src="'+escHtml(pr.fotoUrl)+'" alt="Foto terapia" onclick="window.open('+jsString(pr.fotoUrl)+',\'_blank\')"></div>'
+    : '';
+  var dispHtml = '';
+  if (pr.stato === 'dispensato' && pr.dispensazione) {
+    var d = pr.dispensazione;
+    dispHtml = '<div style="margin-top:8px;background:var(--accent-light);border-radius:6px;padding:8px 10px">'
+      +'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent-dark);margin-bottom:3px">📦 Dispensato</div>'
+      +'<div style="font-size:15px;font-weight:700;color:var(--accent-dark);font-family:var(--mono)">'+escHtml(d.ts)+'</div>'
+      +'<div style="font-size:12px;color:var(--text2);margin-top:2px">'+modalitaIcon(d.modalita)+' '+escHtml(modalitaLabel(d.modalita))
+      +(d.delegatoNome?' · Del: <b>'+escHtml(d.delegatoNome)+'</b>':'')
+      +' · Op: '+escHtml(d.operatore||'—')+'</div>'
+      +'</div>';
   }
   return '<div class="sg-card">'
     +'<div class="sg-card-header"><span class="sg-card-paziente">'+escHtml(nome)+'</span>'+sgStatoBadge(pr)+'</div>'
-    +'<div class="sg-card-detail">💊 '+escHtml(pr.farmaco||'—')+' · <b>'+escHtml(String(pr.dose||'?'))+'mg/die</b> · '+escHtml(String(pr.qtaTotale||'?'))+'mg tot.</div>'
-    +'<div class="sg-card-detail">📅 '+escHtml(formatDate(pr.periodoDal))+' – '+escHtml(formatDate(pr.periodoAl))+'</div>'
+    +'<div class="sg-card-detail" style="font-size:12px;color:var(--text3);font-family:var(--mono)">Prep. '+escHtml(formatDate(pr.dataPreprazione))+'</div>'
+    +'<div class="sg-card-detail">💊 '+escHtml(pr.farmaco||'—')+' · <b>'+escHtml(String(pr.dose||'?'))+'mg/die</b> · <b>'+escHtml(String(pr.qtaTotale||'?'))+'mg tot.</b></div>'
+    +'<div class="sg-card-detail">📅 Terapia: '+escHtml(formatDate(pr.periodoDal))+' – '+escHtml(formatDate(pr.periodoAl))+'</div>'
     +'<div class="sg-card-detail">🔧 '+escHtml((pr.preparatore&&pr.preparatore.nome)||'—')
-      +(pr.controllore?' · 🔍 '+escHtml(pr.controllore.nome):'')
-      +(pr.dispensazione?' · 📦 '+escHtml(pr.dispensazione.operatore||'—'):'')+'</div>'
+      +(pr.controllore?' · 🔍 '+escHtml(pr.controllore.nome):'')+'</div>'
     +(pr.lotto?'<div class="sg-card-detail" style="font-family:var(--mono);font-size:11px">Lotto: '+escHtml(pr.lotto)+'</div>':'')
     +(pr.note?'<div class="sg-card-detail" style="font-style:italic">📝 '+escHtml(pr.note)+'</div>':'')
+    +dispHtml
     +fotoHtml
     +'</div>';
 }
@@ -3471,7 +3459,7 @@ function sgRender() {
     return;
   }
 
-  // ── PER PAZIENTE
+  // ── PER PAZIENTE — card inline raggruppate per paziente
   if (_sgVista === 'paziente') {
     var byP = {};
     _sgProtocolli.forEach(function(pr) {
@@ -3482,54 +3470,33 @@ function sgRender() {
     var html = '';
     Object.keys(byP).sort().forEach(function(nome) {
       var list = byP[nome];
-      html += '<div class="sg-group">👤 '+escHtml(nome)+' ('+list.length+')</div>';
-      html += '<div class="sg-item" onclick="sgMostraPaziente('+jsString(nome)+')">'
-        +'<div class="sg-item-nome">'+escHtml(nome)+'</div>'
-        +'<div class="sg-item-sub">'+list.length+' preparazioni</div>'
-        +'</div>';
+      html += '<div class="sg-group">👤 '+escHtml(nome)+' · '+list.length+' preparazioni</div>';
+      html += list.map(sgBuildCard).join('');
     });
     document.getElementById('sg-view-paziente').innerHTML = html || '<div class="empty-state"><div class="icon">👤</div><p>Nessuna preparazione</p></div>';
     return;
   }
 
-  // ── PER DATA
+  // ── PER DATA — date picker + lista cronologica filtrata
   if (_sgVista === 'data') {
-    var byD = {};
-    _sgProtocolli.forEach(function(pr) {
-      var d = pr.dataPreprazione ? formatDate(pr.dataPreprazione) : '—';
-      if (!byD[d]) byD[d] = [];
-      byD[d].push(pr);
-    });
-    var keys = Object.keys(byD).sort(function(a,b){ return a<b?1:-1; });
-    var html = '';
-    keys.forEach(function(d) {
-      var list = byD[d];
-      html += '<div class="sg-group">📆 '+escHtml(d)+'</div>';
-      html += '<div class="sg-item" onclick="sgMostraData('+jsString(d)+')">'
-        +'<div class="sg-item-nome">'+escHtml(d)+'</div>'
-        +'<div class="sg-item-sub">'+list.length+' preparazioni</div>'
-        +'</div>';
-    });
-    document.getElementById('sg-view-data').innerHTML = html || '<div class="empty-state"><div class="icon">📆</div><p>Nessuna preparazione</p></div>';
+    // Reset risultati, mantieni il picker
+    document.getElementById('sg-data-risultati').innerHTML = '<div class="empty-state"><div class="icon">📆</div><p>Seleziona una data per vedere le preparazioni</p></div>';
+    document.getElementById('sg-data-input').value = '';
     return;
   }
 }
 
-function sgMostraPaziente(nome) {
-  var list = _sgProtocolli.filter(function(pr){ return sgNomePaziente(pr) === nome; });
-  mostraModal('👤 '+nome,
-    list.map(sgBuildCard).join('') || '<p style="color:var(--text2)">Nessuna preparazione</p>',
-    '<button class="btn btn-ghost" onclick="chiudiModal()">Chiudi</button>'
-  );
+function sgFiltroData(val) {
+  var el = document.getElementById('sg-data-risultati');
+  if (!val) { el.innerHTML = ''; return; }
+  var list = _sgProtocolli.filter(function(pr){ return pr.dataPreprazione === val; });
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📆</div><p>Nessuna preparazione registrata per il '+escHtml(formatDate(val))+'</p></div>';
+  } else {
+    el.innerHTML = '<div class="sg-group">'+list.length+' preparazion' + (list.length===1?'e':'i') + ' del '+escHtml(formatDate(val))+'</div>' + list.map(sgBuildCard).join('');
+  }
 }
 
-function sgMostraData(d) {
-  var list = _sgProtocolli.filter(function(pr){ return formatDate(pr.dataPreprazione) === d; });
-  mostraModal('📆 '+d,
-    list.map(sgBuildCard).join('') || '<p style="color:var(--text2)">Nessuna preparazione</p>',
-    '<button class="btn btn-ghost" onclick="chiudiModal()">Chiudi</button>'
-  );
-}
 
 // ════════════════════════════════════════════
 // INIT
@@ -3537,8 +3504,6 @@ function sgMostraData(d) {
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('header-date').textContent =
     new Date().toLocaleDateString('it-CH', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('vista-date-subtitle').textContent =
-    new Date().toLocaleDateString('it-CH', {weekday:'long',day:'numeric',month:'long'});
 
   // Event listener ricerca pazienti
   var si = document.getElementById('patient-search-input');
