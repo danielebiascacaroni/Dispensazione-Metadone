@@ -1207,10 +1207,11 @@ if (FIREBASE_ENABLED) {
     firebase.initializeApp(firebaseConfig);
     firestoreDB = firebase.firestore();
     firebaseStorage = firebase.storage();
-    // ── Fase 1.5: autenticazione anonima Firebase ──
-    // Autenticazione con account dedicato per Security Rules.
-    firebase.auth().signInWithEmailAndPassword('farmacia.ascona@gmail.com','7917139Dbc').catch(function(e){
-      console.warn('Firebase auth fallita:', e.code);
+    // ── Fase 1.5: autenticazione anonima Firebase (bootstrap) ──
+    // Accesso anonimo per caricare lista operatori e dispositivi.
+    // L'operatore si autentica con il suo account personale dopo il PIN.
+    firebase.auth().signInAnonymously().catch(function(e){
+      console.warn('Firebase auth anonima fallita:', e.code);
     });
     // DEVICE AUTH — Registro dispositivi autorizzati
     (function(){
@@ -1586,6 +1587,23 @@ async function loginPinConfirm() {
     _loginPinBuffer=''; updateLoginDots();
     return;
   }
+
+  // Re-autenticazione Firebase con account personale dell'operatore
+  if (op.emailFirebase) {
+    try {
+      var pinHash = await sha256(_loginPinBuffer);
+      await firebase.auth().signOut();
+      await firebase.auth().signInWithEmailAndPassword(op.emailFirebase, pinHash);
+    } catch(e) {
+      console.warn('Re-auth operatore fallita:', e.code);
+      // Ripristina accesso anonimo per non bloccare l'app
+      await firebase.auth().signInAnonymously().catch(function(){});
+      errEl.textContent = 'Errore autenticazione Firebase — contatta l\'admin';
+      _loginPinBuffer=''; updateLoginDots();
+      return;
+    }
+  }
+
   currentOperatore = { sigla:op.sigla, nome:op.nome, ruolo:op.ruolo, tipo:op.tipo||'controllore' };
   _loginPinBuffer=''; updateLoginDots(); errEl.textContent='';
   document.getElementById('header-user-badge').textContent = op.nome;
@@ -3192,17 +3210,93 @@ function dispatchPinCallback(firma, op) {
 }
 
 // ════════════════════════════════════════════
+// PDF HELPERS
+// ════════════════════════════════════════════
+
+// Carica un'immagine remota come data URL (async). cb(null) se fallisce.
+function caricaImmaginePerPDF(url, cb) {
+  if (!url) { cb(null); return; }
+  fetch(url)
+    .then(function(r){ return r.blob(); })
+    .then(function(blob){
+      var fr = new FileReader();
+      fr.onload  = function(e){ cb(e.target.result); };
+      fr.onerror = function(){ cb(null); };
+      fr.readAsDataURL(blob);
+    })
+    .catch(function(){ cb(null); });
+}
+
+// Inserisce un'immagine (data URL) nel PDF scalata entro maxW×maxH mm.
+// Ritorna la nuova y dopo l'immagine.
+function pdfAddImgScaled(doc, dataUrl, x, y, maxW, maxH) {
+  if (!dataUrl) return y;
+  try {
+    var fmt = /data:image\/jpe?g/i.test(dataUrl) ? 'JPEG' : 'PNG';
+    var img = new Image();
+    img.src = dataUrl;
+    var natW = img.naturalWidth  || 600;
+    var natH = img.naturalHeight || 400;
+    var wMM = natW * 0.2646;
+    var hMM = natH * 0.2646;
+    if (wMM > maxW) { hMM = hMM * maxW / wMM; wMM = maxW; }
+    if (hMM > maxH) { wMM = wMM * maxH / hMM; hMM = maxH; }
+    doc.addImage(dataUrl, fmt, x, y, wMM, hMM);
+    return y + hMM + 4;
+  } catch(e) { return y; }
+}
+
+// Aggiunge una nuova pagina se y + needed supera il margine inferiore.
+function pdfCheckPage(doc, y, needed) {
+  if (y + (needed || 20) > 278) { doc.addPage(); return 15; }
+  return y;
+}
+
+// Converte i pixel non-trasparenti del logo in bianco puro (per fondo viola).
+// Richiede che il logo PNG abbia un canale alpha. cb(dataUrl) o cb(null).
+function logoABianco(dataUrl, cb) {
+  if (!dataUrl) { cb(null); return; }
+  try {
+    var img = new Image();
+    img.onload = function() {
+      var cvs = document.createElement('canvas');
+      cvs.width = img.naturalWidth; cvs.height = img.naturalHeight;
+      var ctx = cvs.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      var id = ctx.getImageData(0, 0, cvs.width, cvs.height);
+      var px = id.data;
+      for (var i = 0; i < px.length; i += 4) {
+        if (px[i+3] > 10) { px[i]=255; px[i+1]=255; px[i+2]=255; }
+      }
+      ctx.putImageData(id, 0, 0);
+      cb(cvs.toDataURL('image/png'));
+    };
+    img.onerror = function() { cb(dataUrl); };
+    img.src = dataUrl;
+  } catch(e) { cb(dataUrl); }
+}
+
+// ════════════════════════════════════════════
 // PDF — PROTOCOLLO PREPARAZIONE
 // ════════════════════════════════════════════
 function generaPDFPreparazione(protId) {
   var pr = getProtocollo(protId);
   var pz = pr ? getPaziente(pr.pazienteId) : null;
   if (!pr||!pz) { showToast('Dati non trovati','error'); return; }
+  showToast('Generazione PDF…','info');
+  caricaImmaginePerPDF(pr.fotoUrl, function(fotoData) {
+    _buildPDFPreparazione(pr, pz, fotoData);
+  });
+}
+
+function _buildPDFPreparazione(pr, pz, fotoData) {
   var jsPDFClass = (window.jspdf&&window.jspdf.jsPDF)||(typeof jspdf!=='undefined'&&jspdf.jsPDF);
   if (!jsPDFClass) { showToast('jsPDF non disponibile','error'); return; }
   var doc = new jsPDFClass({orientation:'portrait',unit:'mm',format:'a4'});
   var ml=20, mr=190, y=20;
+  var cVerde=[45,106,79], cBlu=[41,128,185];
 
+  // ── Header verde ──
   doc.setFillColor(45,106,79); doc.rect(0,0,210,30,'F');
   doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
   doc.text('PROTOCOLLO DI PREPARAZIONE — METADONE',105,12,{align:'center'});
@@ -3210,47 +3304,126 @@ function generaPDFPreparazione(protId) {
   doc.text('Farmacia Ascona',105,22,{align:'center'});
   y=38; doc.setTextColor(0,0,0);
 
-  doc.setFillColor(232,244,234); doc.rect(ml-2,y-5,mr-ml+4,24,'F');
-  doc.setFontSize(13); doc.setFont('helvetica','bold');
-  doc.text(pz.cognome+' '+pz.nome,ml,y+2);
+  // ── Box paziente ──
+  doc.setFillColor(232,244,234); doc.rect(ml-2,y-5,mr-ml+4,26,'F');
+  doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text(pz.cognome+' '+pz.nome, ml, y+2);
   doc.setFontSize(10); doc.setFont('helvetica','normal');
-  doc.text('Nato/a: '+formatDate(pz.ddn)+' · '+formatAge(pz.ddn)+'   Medico: '+(pz.medico||'—'),ml,y+9);
-  doc.text('Giorno consegna: '+(pz.giornoConsegna||'—')+'   Modalità: '+modalitaLabel(pz.modalitaUsuale),ml,y+16);
-  y+=30;
+  doc.text('Nato/a: '+formatDate(pz.ddn)+' ('+formatAge(pz.ddn)+')   Medico: '+(pz.medico||'—'), ml, y+9);
+  doc.text('Giorno consegna: '+(pz.giornoConsegna||'—')+'   Modalita\' abituale: '+modalitaLabel(pz.modalitaUsuale), ml, y+16);
+  y+=32;
 
-  doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(45,106,79);
-  doc.text('DATI PREPARAZIONE',ml,y); y+=6;
+  // ── Dati preparazione ──
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.setTextColor(cVerde[0],cVerde[1],cVerde[2]);
+  doc.text('DATI PREPARAZIONE', ml, y); y+=6;
   doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  [['Data preparazione',formatDate(pr.dataPreprazione)],['Farmaco',pr.farmaco],
-   ['Forma',pr.forma],['Dose',pr.dose+' mg/die'],['Qtà totale',pr.qtaTotale+' mg'],
-   ['N° lotto',pr.lotto],['Periodo',formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl)],
-   ['N° giorni',(pr.giorniCoperti&&pr.giorniCoperti.length)||'—']
-  ].forEach(function(r){ doc.setFont('helvetica','bold'); doc.text(r[0]+':',ml,y); doc.setFont('helvetica','normal'); doc.text(String(r[1]),ml+50,y); y+=6; });
 
-  y+=2; doc.setFont('helvetica','bold'); doc.text('Giorni coperti:',ml,y); y+=5; doc.setFont('helvetica','normal');
-  if (pr.giorniCoperti&&pr.giorniCoperti.length) {
-    var gLines=doc.splitTextToSize(pr.giorniCoperti.map(formatDateShort).join('   '),mr-ml);
-    doc.text(gLines,ml,y); y+=gLines.length*5+2;
+  var mgSett = pr.mgSettimana != null ? pr.mgSettimana
+    : (pr.dose && pr.pausa != null ? pr.dose*(7-(pr.pausa||0)) : null);
+  var righe = [
+    ['Data preparazione',  formatDate(pr.dataPreprazione)],
+    ['Farmaco',            pr.farmaco||'—'],
+    ['Forma farmaceutica', pr.forma||'—'],
+    ['Dose giornaliera',   pr.dose+' mg/die'],
+  ];
+  if (pr.pausa > 0) righe.push(['Pausa settimanale', pr.pausa+' giorno/i per settimana']);
+  if (mgSett != null) righe.push(['mg / settimana', mgSett+' mg']);
+  righe.push(['Quantita\' totale', pr.qtaTotale+' mg']);
+  righe.push(['N\u00b0 lotto', pr.lotto||'—']);
+  righe.push(['Periodo', formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl)]);
+  righe.push(['Giorni coperti', String((pr.giorniCoperti&&pr.giorniCoperti.length)||'—')]);
+  righe.forEach(function(r) {
+    y = pdfCheckPage(doc, y, 7);
+    doc.setFont('helvetica','bold'); doc.text(r[0]+':', ml, y);
+    doc.setFont('helvetica','normal'); doc.text(String(r[1]), ml+55, y);
+    y+=6;
+  });
+
+  // Griglia giorni
+  if (pr.giorniCoperti && pr.giorniCoperti.length) {
+    y+=3; y=pdfCheckPage(doc,y,12);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(cVerde[0],cVerde[1],cVerde[2]);
+    doc.text('Griglia giorni:', ml, y); y+=5;
+    doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    var gLines = doc.splitTextToSize(pr.giorniCoperti.map(formatDateShort).join('   '), mr-ml);
+    gLines.forEach(function(line){ y=pdfCheckPage(doc,y,5); doc.text(line,ml,y); y+=5; });
+    doc.setFontSize(10);
   }
-  if (pr.note) { doc.setFont('helvetica','bold'); doc.text('Note:',ml,y); y+=5; doc.setFont('helvetica','normal'); var nl=doc.splitTextToSize(pr.note,mr-ml); doc.text(nl,ml,y); y+=nl.length*5+2; }
 
-  y+=4; doc.setDrawColor(200,200,200); doc.line(ml,y,mr,y); y+=6;
-  doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(45,106,79); doc.text('PREPARATORE',ml,y); y+=6;
+  // Note
+  if (pr.note) {
+    y+=3; y=pdfCheckPage(doc,y,12);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(cVerde[0],cVerde[1],cVerde[2]);
+    doc.text('Note:', ml, y); y+=5;
+    doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+    var nl = doc.splitTextToSize(pr.note, mr-ml);
+    nl.forEach(function(l){ y=pdfCheckPage(doc,y,5); doc.text(l,ml,y); y+=5; });
+  }
+
+  // ── Foto terapia ──
+  if (fotoData) {
+    y+=6; y=pdfCheckPage(doc,y,14);
+    doc.setDrawColor(200,200,200); doc.line(ml,y,mr,y); y+=6;
+    doc.setFontSize(11); doc.setFont('helvetica','bold');
+    doc.setTextColor(cVerde[0],cVerde[1],cVerde[2]);
+    doc.text('FOTO TERAPIA', ml, y); y+=6;
+    doc.setTextColor(0,0,0);
+    y=pdfCheckPage(doc,y,65);
+    var yFotoPre = y;
+    y = pdfAddImgScaled(doc, fotoData, ml, y, mr-ml, 80);
+    if (y===yFotoPre) {
+      doc.setFontSize(9); doc.setTextColor(150,150,150);
+      doc.text('[Immagine non incorporata]', ml, y); y+=6;
+      doc.setFontSize(10); doc.setTextColor(0,0,0);
+    }
+  }
+
+  // ── Preparatore ──
+  y+=6; y=pdfCheckPage(doc,y,22);
+  doc.setDrawColor(200,200,200); doc.line(ml,y,mr,y); y+=6;
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.setTextColor(cVerde[0],cVerde[1],cVerde[2]);
+  doc.text('PREPARATORE', ml, y); y+=6;
   doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(10);
   if (pr.preparatore) {
-    doc.text('Nome: '+pr.preparatore.nome+'   Timestamp: '+pr.preparatore.ts,ml,y); y+=7;
-    if (pr.preparatore.firmaImg) { try { doc.addImage(pr.preparatore.firmaImg,'PNG',ml,y,50,18); y+=22; } catch(e){ y+=22; } }
-    else { doc.rect(ml,y,60,18); doc.setFontSize(8); doc.setTextColor(150,150,150); doc.text('Firma immagine non disponibile in demo',ml+2,y+10); doc.setTextColor(0,0,0); doc.setFontSize(10); y+=22; }
-  }
+    doc.setFont('helvetica','bold'); doc.text(pr.preparatore.nome, ml, y);
+    doc.setFont('helvetica','normal'); doc.text(pr.preparatore.ts, ml+80, y); y+=5;
+    if (pr.preparatore.ruolo) {
+      doc.setFontSize(9); doc.setTextColor(100,100,100);
+      doc.text('Ruolo: '+pr.preparatore.ruolo, ml, y);
+      doc.setFontSize(10); doc.setTextColor(0,0,0); y+=5;
+    }
+  } else { doc.text('—', ml, y); y+=6; }
 
-  y+=4; doc.line(ml,y,mr,y); y+=6;
-  doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(41,128,185); doc.text('CONTROLLORE',ml,y); y+=6;
+  // ── Controllore ──
+  y+=4; y=pdfCheckPage(doc,y,22);
+  doc.line(ml,y,mr,y); y+=6;
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.setTextColor(cBlu[0],cBlu[1],cBlu[2]);
+  doc.text('CONTROLLORE', ml, y); y+=6;
   doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  if (pr.controllore) { doc.text('Nome: '+pr.controllore.nome+'   Timestamp: '+pr.controllore.ts,ml,y); y+=5; doc.setFont('helvetica','italic'); doc.setTextColor(120,120,120); doc.text('Il controllore non appone firma grafica — identificato tramite PIN e timestamp',ml,y); y+=5; }
-  else { doc.text('Controllo non ancora eseguito',ml,y); y+=6; }
+  if (pr.controllore) {
+    var stessoOp = !!(pr.preparatore && pr.preparatore.sigla === pr.controllore.sigla);
+    doc.setFont('helvetica','bold'); doc.text(pr.controllore.nome, ml, y);
+    doc.setFont('helvetica','normal'); doc.text(pr.controllore.ts, ml+80, y); y+=5;
+    if (stessoOp) {
+      y=pdfCheckPage(doc,y,10);
+      doc.setFillColor(254,242,226); doc.rect(ml-2,y-3,mr-ml+4,9,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(230,126,34);
+      doc.text('ATTENZIONE: stesso operatore del preparatore — supervisione obbligatoria', ml, y+2);
+      doc.setFontSize(10); doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); y+=10;
+    }
+    doc.setFontSize(8); doc.setTextColor(120,120,120);
+    doc.text('Controllore identificato tramite PIN e timestamp — nessuna firma grafica apposta.', ml, y);
+    doc.setFontSize(10); doc.setTextColor(0,0,0); y+=6;
+  } else { doc.text('Controllo non ancora eseguito', ml, y); y+=6; }
 
+  // ── Footer ──
   doc.setTextColor(150,150,150); doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.text('Generato il '+nowStr()+' · Dispensazione Metadone — Farmacia Ascona',105,287,{align:'center'});
+  doc.text('Generato il '+nowStr()+' · Dispensazione Metadone — Farmacia Ascona', 105, 287, {align:'center'});
   doc.save('PrepMetadone_'+pz.cognome+'_'+pr.periodoDal+'.pdf');
   showToast('PDF preparazione generato ✓','success');
 }
@@ -3262,66 +3435,179 @@ function generaPDFDispensazione(protId) {
   var pr = getProtocollo(protId);
   var pz = pr ? getPaziente(pr.pazienteId) : null;
   if (!pr||!pz) { showToast('Dati non trovati','error'); return; }
+  showToast('Generazione PDF…','info');
+  caricaImmaginePerPDF(pr.fotoUrl, function(fotoData) {
+    _buildPDFDispensazione(pr, pz, fotoData);
+  });
+}
+
+function _buildPDFDispensazione(pr, pz, fotoData) {
   var jsPDFClass = (window.jspdf&&window.jspdf.jsPDF)||(typeof jspdf!=='undefined'&&jspdf.jsPDF);
   if (!jsPDFClass) { showToast('jsPDF non disponibile','error'); return; }
   var doc = new jsPDFClass({orientation:'portrait',unit:'mm',format:'a4'});
   var ml=20, mr=190, y=20;
+  var cViola=[123,45,139], cVerde=[45,106,79];
 
-  doc.setFillColor(123,45,139); doc.rect(0,0,210,30,'F');
-  doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont('helvetica','bold');
-  doc.text('FORMULARIO CUMULATIVO DISPENSAZIONE — METADONE',105,12,{align:'center'});
-  doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.text('Farmacia Ascona',105,22,{align:'center'});
-  y=38; doc.setTextColor(0,0,0);
+  // ── Header viola (44mm) ──
+  doc.setFillColor(123,45,139); doc.rect(0,0,210,44,'F');
+  doc.setTextColor(255,255,255);
 
-  doc.setFillColor(243,229,245); doc.rect(ml-2,y-5,mr-ml+4,24,'F');
-  doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.text(pz.cognome+' '+pz.nome,ml,y+2);
-  doc.setFontSize(10); doc.setFont('helvetica','normal');
-  doc.text('Nato/a: '+formatDate(pz.ddn)+'   Medico: '+(pz.medico||'—'),ml,y+9);
-  doc.text('Giorno consegna: '+(pz.giornoConsegna||'—')+'   '+((pz.terapia&&pz.terapia.farmaco)||''),ml,y+16);
-  y+=30;
+  doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text('FARMACIA ASCONA', ml, 11);
 
-  doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(123,45,139); doc.text('PERIODO',ml,y); y+=6;
-  doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  doc.text('Dal: '+formatDate(pr.periodoDal)+'   Al: '+formatDate(pr.periodoAl)+'   N° giorni: '+((pr.giorniCoperti&&pr.giorniCoperti.length)||'—'),ml,y); y+=5;
-  doc.text('Farmaco: '+pr.farmaco+'   Dose: '+pr.dose+' mg/die   Qtà tot.: '+pr.qtaTotale+' mg   Lotto: '+pr.lotto,ml,y); y+=5;
-  if (pr.giorniCoperti&&pr.giorniCoperti.length) {
-    var gL=doc.splitTextToSize(pr.giorniCoperti.map(formatDateShort).join('   '),mr-ml);
-    doc.text(gL,ml,y); y+=gL.length*5+3;
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('Viale Monte Verita\' 3  –  CH-6612 Ascona', ml, 17);
+  doc.text('farmacia.ascona@ovan.ch   |   +41 091 791 2169', ml, 22);
+
+  doc.setDrawColor(255,255,255); doc.setLineWidth(0.3);
+  doc.line(ml, 27, 200, 27); doc.setLineWidth(0.2);
+
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('FORMULARIO DI DISPENSAZIONE TERAPIA SOSTITUTIVA', 105, 37, {align:'center'});
+
+  y=52; doc.setTextColor(0,0,0); doc.setDrawColor(200,200,200);
+
+  // ── Box paziente ──
+  doc.setFillColor(243,229,245); doc.rect(ml-2,y-4,mr-ml+4,22,'F');
+  doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text(pz.cognome+' '+pz.nome, ml, y+2);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('Nato/a: '+formatDate(pz.ddn)+' ('+formatAge(pz.ddn)+')   Medico: '+(pz.medico||'—'), ml, y+8);
+  doc.text('Giorno consegna: '+(pz.giornoConsegna||'—')+(pz.telefono?'   Tel.: '+pz.telefono:''), ml, y+14);
+  y+=26;
+
+  // ── Periodo e terapia ──
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.setTextColor(cViola[0],cViola[1],cViola[2]);
+  doc.text('PERIODO E TERAPIA', ml, y); y+=5;
+  doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+
+  var mgSett2 = pr.mgSettimana != null ? pr.mgSettimana
+    : (pr.dose && pr.pausa != null ? pr.dose*(7-(pr.pausa||0)) : null);
+  var righe2 = [
+    ['Periodo',            formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl)],
+    ['N\u00b0 giorni',     String((pr.giorniCoperti&&pr.giorniCoperti.length)||'—')],
+    ['Farmaco',            pr.farmaco||'—'],
+    ['Forma farmaceutica', pr.forma||'—'],
+    ['Dose giornaliera',   pr.dose+' mg/die'],
+  ];
+  if (pr.pausa > 0) righe2.push(['Pausa settimanale', pr.pausa+' giorno/i per settimana']);
+  if (mgSett2 != null) righe2.push(['mg / settimana', mgSett2+' mg']);
+  righe2.push(['Quantita\' totale', pr.qtaTotale+' mg']);
+  righe2.push(['N\u00b0 lotto', pr.lotto||'—']);
+  righe2.forEach(function(r) {
+    y=pdfCheckPage(doc,y,6);
+    doc.setFont('helvetica','bold'); doc.text(r[0]+':', ml, y);
+    doc.setFont('helvetica','normal'); doc.text(String(r[1]), ml+50, y);
+    y+=5;
+  });
+
+  // Griglia giorni
+  if (pr.giorniCoperti && pr.giorniCoperti.length) {
+    y+=2; y=pdfCheckPage(doc,y,10);
+    doc.setFont('helvetica','bold');
+    doc.setTextColor(cViola[0],cViola[1],cViola[2]);
+    doc.text('Griglia giorni:', ml, y); y+=4;
+    doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    var gL = doc.splitTextToSize(pr.giorniCoperti.map(formatDateShort).join('   '), mr-ml);
+    gL.forEach(function(line){ y=pdfCheckPage(doc,y,4.5); doc.text(line,ml,y); y+=4.5; });
+    doc.setFontSize(9);
   }
 
-  y+=4; doc.setDrawColor(200,200,200); doc.line(ml,y,mr,y); y+=6;
-  doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(123,45,139); doc.text('DISPENSAZIONE',ml,y); y+=6;
-  doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  if (pr.dispensazione) {
-    var d=pr.dispensazione;
-    doc.text('Modalità: '+modalitaLabel(d.modalita),ml,y); y+=5;
-    if(d.delegatoNome){doc.text('Delegato: '+d.delegatoNome,ml,y);y+=5;}
-    if(d.nota){doc.text('Nota: '+d.nota,ml,y);y+=5;}
-    doc.text('Data/ora: '+d.ts+'   Operatore: '+d.operatore,ml,y); y+=5; y+=3;
-    if(d.firmaAcquisita){
-      doc.setFillColor(232,244,234); doc.rect(ml-2,y-3,mr-ml+4,12,'F');
-      doc.setFont('helvetica','bold'); doc.setTextColor(45,106,79);
-      doc.text('✓ FIRMA RICEVENTE ACQUISITA — archiviata nel sistema',ml,y+4);
-      doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); y+=14;
-      doc.setFontSize(8); doc.setTextColor(100,100,100);
-      doc.text('La firma è archiviata nel protocollo digitale e non incorporata nel PDF.',ml,y); y+=5;
-      doc.setFontSize(10); doc.setTextColor(0,0,0);
-    } else {
-      doc.setFillColor(254,242,226); doc.rect(ml-2,y-3,mr-ml+4,10,'F');
-      doc.setFont('helvetica','bold'); doc.setTextColor(230,126,34);
-      doc.text('Nessuna firma richiesta — '+modalitaLabel(d.modalita),ml,y+3);
-      doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); y+=14;
+  // ── Preparazione e controllo ──
+  y+=2; y=pdfCheckPage(doc,y,18);
+  doc.setDrawColor(200,200,200); doc.line(ml,y,mr,y); y+=5;
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.setTextColor(cVerde[0],cVerde[1],cVerde[2]);
+  doc.text('PREPARAZIONE E CONTROLLO', ml, y); y+=5;
+  doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  if (pr.preparatore) {
+    doc.setFont('helvetica','bold'); doc.text('Preparatore:', ml, y);
+    doc.setFont('helvetica','normal');
+    doc.text(pr.preparatore.nome+'   '+pr.preparatore.ts, ml+36, y); y+=5;
+  }
+  if (pr.controllore) {
+    doc.setFont('helvetica','bold'); doc.text('Controllore:', ml, y);
+    doc.setFont('helvetica','normal');
+    doc.text(pr.controllore.nome+'   '+pr.controllore.ts, ml+36, y); y+=5;
+    if (pr.preparatore && pr.preparatore.sigla === pr.controllore.sigla) {
+      doc.setFontSize(8); doc.setTextColor(230,126,34);
+      doc.text('ATTENZIONE: stesso operatore del preparatore — supervisione obbligatoria', ml, y);
+      doc.setFontSize(9); doc.setTextColor(0,0,0); y+=4;
     }
-  } else { doc.text('Dispensazione non ancora eseguita',ml,y); y+=6; }
+  }
 
-  y+=4; doc.line(ml,y,mr,y); y+=6;
-  doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(45,106,79); doc.text('PREPARAZIONE / CONTROLLO',ml,y); y+=6;
-  doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  if(pr.preparatore){doc.text('Preparatore: '+pr.preparatore.nome+' · '+pr.preparatore.ts,ml,y);y+=5;}
-  if(pr.controllore){doc.text('Controllore: '+pr.controllore.nome+' · '+pr.controllore.ts,ml,y);y+=5;}
+  // ── Foto terapia (su 2a pagina se necessario) ──
+  if (fotoData) {
+    y+=2; y=pdfCheckPage(doc,y,12);
+    doc.line(ml,y,mr,y); y+=5;
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.setTextColor(cViola[0],cViola[1],cViola[2]);
+    doc.text('FOTO TERAPIA', ml, y); y+=5;
+    doc.setTextColor(0,0,0);
+    y=pdfCheckPage(doc,y,55);
+    var yFoto2 = y;
+    y = pdfAddImgScaled(doc, fotoData, ml, y, mr-ml, 60);
+    if (y===yFoto2) {
+      doc.setFontSize(8); doc.setTextColor(150,150,150);
+      doc.text('[Immagine non incorporata]', ml, y); y+=5;
+      doc.setFontSize(9); doc.setTextColor(0,0,0);
+    }
+  }
 
+  // ── Dispensazione ──
+  y+=2; y=pdfCheckPage(doc,y,18);
+  doc.setDrawColor(200,200,200); doc.line(ml,y,mr,y); y+=5;
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.setTextColor(cViola[0],cViola[1],cViola[2]);
+  doc.text('DISPENSAZIONE', ml, y); y+=5;
+  doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+
+  if (pr.dispensazione) {
+    var d = pr.dispensazione;
+    // Badge DISPENSATO
+    y=pdfCheckPage(doc,y,10);
+    doc.setFillColor(243,229,245); doc.rect(ml-2,y-3,mr-ml+4,9,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.setTextColor(cViola[0],cViola[1],cViola[2]);
+    doc.text('DISPENSATO — '+modalitaLabel(d.modalita), ml, y+3);
+    y+=11; doc.setFontSize(9); doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+
+    var dispRighe = [['Data / ora', d.ts], ['Operatore', d.operatore||'—']];
+    if (d.delegatoNome) dispRighe.push(['Delegato', d.delegatoNome]);
+    if (d.nota) dispRighe.push(['Nota', d.nota]);
+    dispRighe.forEach(function(r) {
+      y=pdfCheckPage(doc,y,6);
+      doc.setFont('helvetica','bold'); doc.text(r[0]+':', ml, y);
+      doc.setFont('helvetica','normal'); doc.text(String(r[1]), ml+36, y);
+      y+=5;
+    });
+
+    // Firma ricevente
+    y+=2; y=pdfCheckPage(doc,y,12);
+    if (d.firmaAcquisita) {
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.setTextColor(cVerde[0],cVerde[1],cVerde[2]);
+      doc.text('FIRMA DEL RICEVENTE ACQUISITA', ml, y); y+=6;
+      doc.setTextColor(0,0,0);
+      if (d.firmaRiceventeImg) {
+        y=pdfCheckPage(doc,y,32);
+        var rectTop = y;
+        doc.setDrawColor(180,180,180); doc.rect(ml, rectTop, 110, 28);
+        var afterFirma = pdfAddImgScaled(doc, d.firmaRiceventeImg, ml+2, rectTop+2, 106, 24);
+        y = Math.max(afterFirma, rectTop+30);
+      }
+    } else {
+      doc.setFillColor(254,242,226); doc.rect(ml-2,y-3,mr-ml+4,9,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(230,126,34);
+      doc.text('Nessuna firma richiesta — '+modalitaLabel(d.modalita), ml, y+2);
+      doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); y+=11;
+    }
+  } else { doc.text('Dispensazione non ancora eseguita', ml, y); y+=5; }
+
+  // ── Footer ──
   doc.setTextColor(150,150,150); doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.text('Generato il '+nowStr()+' · Dispensazione Metadone — Farmacia Ascona',105,287,{align:'center'});
+  doc.text('Generato il '+nowStr()+' · Dispensazione Metadone — Farmacia Ascona', 105, 287, {align:'center'});
   doc.save('DispMetadone_'+pz.cognome+'_'+pr.periodoDal+'.pdf');
   showToast('PDF dispensazione generato ✓','success');
 }
