@@ -1274,13 +1274,13 @@ function loadData() {
     var res = [];
     snap.forEach(function(doc){ res.push(doc.data()); });
     if (res.length) DB.pazienti = res;
-  });
+  }).catch(function(e){ console.warn('Pazienti non caricati (accesso anonimo):', e.code); });
 
   var loadProtocolli = firestoreDB.collection('protocolli_metadone').get().then(function(snap) {
     var res = [];
     snap.forEach(function(doc){ res.push(doc.data()); });
     if (res.length) DB.protocolli = res;
-  });
+  }).catch(function(e){ console.warn('Protocolli non caricati (accesso anonimo):', e.code); });
 
   var loadOperatori = firestoreDB.collection('operatori').get().then(function(snap) {
     var res = [];
