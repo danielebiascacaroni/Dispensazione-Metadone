@@ -1950,10 +1950,11 @@ function renderDashboard() {
 
   var today = todayISO();
 
-  // "Pronti per consegna": stato=controllato, today nel periodo
+  // "Pronti per consegna": tutti i protocolli già controllati
+  // Anche se oggi non rientra nel periodo o non è il giorno abituale di consegna
   // Privacy: solo iniziali (C. N.) + giorno abituale consegna
   var pronti = DB.protocolli.filter(function(pr){
-    return pr.stato==='controllato' && pr.periodoDal<=today && pr.periodoAl>=today;
+    return pr.stato==='controllato';
   });
   document.getElementById('count-pronti').textContent = pronti.length;
   var elPronti = document.getElementById('dash-pronti');
