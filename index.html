@@ -214,6 +214,42 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 .toast.success { background: var(--accent); }
 .toast.error { background: var(--danger); }
 
+/* ── SINGLE INSTANCE BLOCK ── */
+#single-instance-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100001;
+  background: rgba(15, 23, 42, 0.82);
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+#single-instance-box {
+  width: min(420px, 100%);
+  background: white;
+  border-radius: 18px;
+  padding: 30px 24px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.24);
+}
+#single-instance-box h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent-dark);
+  margin-bottom: 10px;
+}
+#single-instance-box p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text2);
+  margin-bottom: 10px;
+}
+#single-instance-box .hint {
+  font-size: 12px;
+  color: var(--text3);
+}
+
 /* ── EMPTY STATE ── */
 .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
 .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
@@ -324,6 +360,16 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 </style>
 </head>
 <body>
+<!-- ════ SINGLE INSTANCE OVERLAY ════ -->
+<div id="single-instance-overlay">
+  <div id="single-instance-box">
+    <div style="font-size:44px;margin-bottom:12px;">🚫</div>
+    <h2>Applicazione già aperta</h2>
+    <p>Questa finestra è stata bloccata perché Dispensazione Metadone risulta già attiva in un'altra finestra dello stesso browser.</p>
+    <p class="hint">Chiudi l'altra finestra oppure attendi alcuni secondi e riapri l'app.</p>
+  </div>
+</div>
+
 <!-- ════ DEVICE AUTH OVERLAY ════ -->
 <div id="device-auth-overlay" style="display:flex;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.88);flex-direction:column;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:16px;padding:32px;max-width:360px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
@@ -1202,6 +1248,102 @@ var firebaseConfig = {
 
 var firestoreDB = null;
 var firebaseStorage = null;
+var singleInstanceGuard = null;
+var singleInstanceBlocked = false;
+
+function createSingleInstanceGuard(appKey) {
+  var LOCK_KEY = 'fa_single_instance:' + appKey;
+  var instanceId = 'inst_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  var HEARTBEAT_MS = 4000;
+  var STALE_MS = 15000;
+  var heartbeatTimer = null;
+  var storageListener = null;
+
+  function now() { return Date.now(); }
+  function readLock() {
+    try {
+      return JSON.parse(localStorage.getItem(LOCK_KEY) || 'null');
+    } catch (e) {
+      return null;
+    }
+  }
+  function writeLock() {
+    localStorage.setItem(LOCK_KEY, JSON.stringify({
+      instanceId: instanceId,
+      appKey: appKey,
+      updatedAt: now(),
+      path: location.pathname
+    }));
+  }
+  function ownsLock(lock) {
+    return !!lock && lock.instanceId === instanceId;
+  }
+  function isFresh(lock) {
+    return !!lock && (now() - Number(lock.updatedAt || 0) < STALE_MS);
+  }
+  function releaseLock() {
+    var current = readLock();
+    if (ownsLock(current)) localStorage.removeItem(LOCK_KEY);
+  }
+  function showBlockedUi() {
+    singleInstanceBlocked = true;
+    var overlay = document.getElementById('single-instance-overlay');
+    if (overlay) overlay.style.display = 'flex';
+    var app = document.getElementById('app');
+    if (app) app.style.display = 'none';
+    var deviceOverlay = document.getElementById('device-auth-overlay');
+    if (deviceOverlay) deviceOverlay.style.display = 'none';
+    var lockOverlay = document.getElementById('lock-overlay');
+    if (lockOverlay) lockOverlay.style.display = 'none';
+  }
+
+  return {
+    start: function() {
+      var existing = readLock();
+      if (existing && !ownsLock(existing) && isFresh(existing)) {
+        showBlockedUi();
+        return false;
+      }
+
+      writeLock();
+
+      storageListener = function(e) {
+        if (e.key !== LOCK_KEY) return;
+        var current = readLock();
+        if (current && !ownsLock(current) && isFresh(current)) {
+          clearInterval(heartbeatTimer);
+          showBlockedUi();
+        }
+      };
+      window.addEventListener('storage', storageListener);
+
+      heartbeatTimer = setInterval(function() {
+        var current = readLock();
+        if (!current || ownsLock(current) || !isFresh(current)) {
+          writeLock();
+        }
+      }, HEARTBEAT_MS);
+
+      window.addEventListener('pagehide', releaseLock);
+      window.addEventListener('beforeunload', releaseLock);
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+          var current = readLock();
+          if (!current || !isFresh(current) || ownsLock(current)) writeLock();
+        }
+      });
+
+      return true;
+    }
+  };
+}
+
+if (FIREBASE_ENABLED) {
+  singleInstanceGuard = createSingleInstanceGuard('dispensazione_metadone');
+  if (!singleInstanceGuard.start()) {
+    FIREBASE_ENABLED = false;
+  }
+}
 if (FIREBASE_ENABLED) {
   try {
     firebase.initializeApp(firebaseConfig);
@@ -1259,9 +1401,15 @@ function sincronizzaProtocollo(pr) {
 
 function eliminaProtocolloFirestore(id) {
   if (!FIREBASE_ENABLED || !firestoreDB) return;
-  firestoreDB.collection('protocolli_metadone').doc(id).set(
-    DB.protocolli.find(function(p){ return p.id === id; }) || { id: id, _deleted: true }
-  ).catch(function(e){ console.error('Sync delete:', e.code); });
+  var pr = DB.protocolli.find(function(p){ return p.id === id; });
+  if (pr) {
+    firestoreDB.collection('protocolli_metadone').doc(id).set(pr)
+      .catch(function(e){ console.error('Sync delete:', e.code); });
+  } else {
+    // Protocollo non in memoria — aggiorna solo il campo stato per non distruggere i dati
+    firestoreDB.collection('protocolli_metadone').doc(id).update({ stato: 'annullato', _deleted: true })
+      .catch(function(e){ console.error('Sync delete fallback:', e.code); });
+  }
 }
 
 // ════════════════════════════════════════════
@@ -1607,6 +1755,10 @@ async function loginPinConfirm() {
   currentOperatore = { sigla:op.sigla, nome:op.nome, ruolo:op.ruolo, tipo:op.tipo||'controllore' };
   _loginPinBuffer=''; updateLoginDots(); errEl.textContent='';
   document.getElementById('header-user-badge').textContent = op.nome;
+
+  // Ricarica dati con le credenziali dell'operatore (l'accesso anonimo non può leggere pazienti/protocolli)
+  await loadData();
+
   startSessionTimer();
   showScreen('screen-dashboard');
   renderDashboard();
@@ -2696,17 +2848,21 @@ function salvaPreparazione() {
     '</div>'
   );
 
-  // Upload foto in background dopo aver già salvato
+  // Upload foto in background — usa .update() per aggiornare solo fotoUrl senza sovrascrivere
+  // controllo/dispensazione eventualmente salvati da altri dispositivi nel frattempo
   if (fotoData) {
     var tentativo = 0;
+    var protIdUpload = pr.id;
     function tentaUpload() {
       tentativo++;
       uploadFotoPrep(fotoData).then(function(url) {
         if (url) {
           pr.fotoUrl = url;
-          sincronizzaProtocollo(pr);
+          if (FIREBASE_ENABLED && firestoreDB) {
+            firestoreDB.collection('protocolli_metadone').doc(protIdUpload).update({ fotoUrl: url })
+              .catch(function(e){ console.warn('Update fotoUrl fallito:', e.code); });
+          }
         } else if (tentativo < 3) {
-          // Riprova fino a 3 volte con backoff
           setTimeout(tentaUpload, tentativo * 5000);
         } else {
           showToast('⚠️ Foto non caricata — riprova aprendo la preparazione', 'error');
@@ -3836,6 +3992,7 @@ function sgFiltroData(val) {
 // INIT
 // ════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
+  if (singleInstanceBlocked) return;
   // Event listener ricerca pazienti
   var si = document.getElementById('patient-search-input');
   if (si) si.addEventListener('input', renderListaPazienti);
