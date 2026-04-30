@@ -1420,8 +1420,11 @@ function loadData() {
 
   var loadPazienti = firestoreDB.collection('pazienti_metadone').get().then(function(snap) {
     var res = [];
-    snap.forEach(function(doc){ res.push(doc.data()); });
-    if (res.length) DB.pazienti = res;
+    snap.forEach(function(doc){
+      var data = doc.data();
+      if (!isArchivedMetadonePatient(data)) res.push(data);
+    });
+    DB.pazienti = res;
   }).catch(function(e){ console.warn('Pazienti non caricati (accesso anonimo):', e.code); });
 
   var loadProtocolli = firestoreDB.collection('protocolli_metadone').get().then(function(snap) {
@@ -1444,6 +1447,11 @@ function loadData() {
 // DEMO DATA
 // ════════════════════════════════════════════
 // Demo offline (FIREBASE_ENABLED=false): campo pin in chiaro; con Firebase: pinHash
+function isArchivedMetadonePatient(p){
+  p = p || {};
+  return p.archiviato === true || p.hiddenInApp === true || p.statoTerapia === 'archiviata_test';
+}
+
 var OPERATORI = [
   { sigla:'DB', nome:'Daniele B.',   ruolo:'farmacista', pin:'1111', attivo:true },
   { sigla:'VA', nome:'Valentina A.', ruolo:'farmacista', pin:'2222', attivo:true },
@@ -1928,8 +1936,9 @@ async function verificaPin() {
   // Recupera immagine firma se preparatore
   if (op.firmaImg) firma.firmaImg = op.firmaImg;
 
+  var _cb = _pinCallback;
   chiudiPin();
-  dispatchPinCallback(firma, op);
+  dispatchPinCallback(firma, op, _cb);
 }
 
 // ════════════════════════════════════════════
@@ -3357,9 +3366,9 @@ function confermaDuplica() {
   showToast('Dati pre-compilati dal protocollo precedente','success');
 }
 
-function dispatchPinCallback(firma, op) {
-  if (_pinCallback && _pinCallback.indexOf('annulla:')===0) {
-    var protId = _pinCallback.split(':')[1];
+function dispatchPinCallback(firma, op, cb) {
+  if (cb && cb.indexOf('annulla:')===0) {
+    var protId = cb.split(':')[1];
     var motivoTxt = window._annulloMotivoPending || '';
     window._annulloMotivoPending = '';
     confermaAnnullaProtocollo(protId, firma, motivoTxt);
