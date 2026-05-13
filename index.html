@@ -46,11 +46,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 .screen.active { display: flex; }
 
 /* ── HEADER ── */
-.header { background: var(--accent-dark); color: white; padding: 14px 20px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-.header-back { background: rgba(255,255,255,0.15); border: none; color: white; width: 38px; height: 38px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+.header { background: var(--accent-dark); color: white; padding: 14px 20px; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.header-back { background: rgba(255,255,255,0.15); border: none; color: white; width: 38px; height: 38px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; justify-self: start; }
 .header-back:active { background: rgba(255,255,255,0.25); }
-.header-title { font-size: 18px; font-weight: 600; flex: 1; }
-.header-subtitle { font-size: 12px; opacity: 0.75; }
+.header-title { font-size: 18px; font-weight: 600; text-align: center; }
+.header-subtitle { font-size: 12px; opacity: 0.75; text-align: center; }
 .header-action { background: rgba(255,255,255,0.15); border: none; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font); transition: background 0.2s; }
 .header-action:active { background: rgba(255,255,255,0.25); }
 .header-user { font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.95); border-radius: 20px; padding: 5px 12px; color: var(--accent-dark); cursor: pointer; white-space: nowrap; border: none; }
@@ -434,7 +434,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <button class="login-pin-btn" onclick="loginPinDigit('9')">9</button>
     <button class="login-pin-btn action" onclick="loginPinClear()">⌫</button>
     <button class="login-pin-btn" onclick="loginPinDigit('0')">0</button>
-    <button class="login-pin-btn action" onclick="loginPinConfirm()" style="background:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.7)">OK</button>
+    <button class="login-pin-btn action empty" onclick="loginPinConfirm()"></button>
   </div>
   <div style="height:40px"></div>
 </div>
@@ -502,8 +502,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 <div id="screen-storico-globale" class="screen">
   <div class="header">
     <button class="header-back" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
-    <div style="flex:1">
-      <div class="header-title">Storico Preparazioni</div>
+    <div>
+      <div class="header-title">Storico Generale</div>
       <div class="header-subtitle" id="sg-header-sub">Terapie Sostitutive</div>
     </div>
   </div>
@@ -517,10 +517,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     <div id="sg-view-crono"></div>
     <div id="sg-view-paziente" style="display:none"></div>
     <div id="sg-view-data" style="display:none">
-      <div class="form-group" style="margin-bottom:16px">
+      <div class="form-group" style="margin-bottom:8px">
         <label class="form-label">Seleziona data</label>
         <input type="date" class="form-input" id="sg-data-input" onchange="sgFiltroData(this.value)">
       </div>
+      <div id="sg-data-chips" style="display:flex;overflow-x:auto;gap:8px;padding:6px 0 14px;-webkit-overflow-scrolling:touch;scrollbar-width:none"></div>
       <div id="sg-data-risultati"></div>
     </div>
     <div style="height:40px"></div>
@@ -586,13 +587,13 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 4 — SCHEDA PAZIENTE
 ═══════════════════════════════════════ -->
 <div id="screen-paziente" class="screen">
-  <div class="header" style="position:relative;justify-content:space-between">
+  <div class="header" style="grid-template-columns:44px 1fr auto">
     <button class="header-back" onclick="showScreen('screen-pazienti');renderListaPazienti()">←</button>
-    <div style="position:absolute;left:50%;transform:translateX(-50%);text-align:center;max-width:55%">
+    <div>
       <div class="header-title" id="pz-header-nome"></div>
       <div class="header-subtitle" id="pz-header-meta"></div>
     </div>
-    <div style="text-align:right;flex-shrink:0">
+    <div style="text-align:right;padding-left:8px">
       <div style="font-size:11px;font-weight:500;color:rgba(255,255,255,0.7);line-height:1.3" id="pz-hdr-date">—</div>
       <div style="font-size:20px;font-weight:300;letter-spacing:1px;font-variant-numeric:tabular-nums;line-height:1.1" id="pz-hdr-time">—</div>
     </div>
@@ -619,7 +620,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 <div id="screen-nuova-prep" class="screen">
   <div class="header">
     <button class="header-back" onclick="showScreen('screen-paziente')">←</button>
-    <div style="flex:1">
+    <div>
       <div class="header-title" id="prep-header-title">Nuova preparazione</div>
       <div class="header-subtitle" id="prep-header-paziente"></div>
     </div>
@@ -733,7 +734,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 <div id="screen-controllo" class="screen">
   <div class="header">
     <button class="header-back" onclick="showScreen('screen-paziente')">←</button>
-    <div style="flex:1">
+    <div>
       <div class="header-title">Controllo preparazione</div>
       <div class="header-subtitle" id="ctrl-header-sub"></div>
     </div>
@@ -805,7 +806,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 <div id="screen-dispensazione" class="screen">
   <div class="header">
     <button class="header-back" onclick="showScreen('screen-paziente')">←</button>
-    <div style="flex:1">
+    <div>
       <div class="header-title">Dispensazione</div>
       <div class="header-subtitle" id="disp-header-sub"></div>
     </div>
@@ -886,7 +887,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 <div id="screen-duplica" class="screen">
   <div class="header">
     <button class="header-back" onclick="showScreen('screen-paziente')">←</button>
-    <div style="flex:1">
+    <div>
       <div class="header-title">Duplicazione rapida</div>
       <div class="header-subtitle" id="duplica-subtitle"></div>
     </div>
@@ -1040,7 +1041,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 <div id="screen-modifica-terapia" class="screen">
   <div class="header">
     <button class="header-back" id="mt-back-btn" onclick="tornaScheda()">←</button>
-    <div style="flex:1">
+    <div>
       <div class="header-title">Modifica terapia</div>
       <div class="header-subtitle" id="mt-header-paziente"></div>
     </div>
@@ -1716,6 +1717,7 @@ function loginPinDigit(d) {
   if (_loginPinBuffer.length >= 4) return;
   _loginPinBuffer += d;
   updateLoginDots();
+  if (_loginPinBuffer.length === 4) loginPinConfirm();
 }
 function loginPinClear() {
   _loginPinBuffer = _loginPinBuffer.slice(0,-1);
@@ -2323,61 +2325,64 @@ function renderTabInfo(p) {
 
 function renderTabStorico(p) {
   var el = document.getElementById('tab-storico');
-
-  // Pulsante nuova annotazione
   var html = '<button class="btn btn-ghost btn-full" style="margin-bottom:14px" onclick="showNuovaAnnotazione()">📝 Aggiungi annotazione</button>';
-
-  // Raccolta eventi rilevanti (NO audit trail dettaglio operativo)
   var allEvents = [];
 
-  // Modifiche terapia dallo storiaTerap
   (p.storiaTerap||[]).forEach(function(ev){
-    allEvents.push({ ts: ev.ts||ev.dataFine||'', tipo:'modifica_terapia', op:ev.op||'—',
+    allEvents.push({ ts:ev.ts||ev.dataFine||'', tipo:'modifica_terapia', op:ev.op||'—',
       dettaglio:'Modifica terapia: '+(ev.terapia&&ev.terapia.farmaco||'—')+' '+escHtml(String(ev.terapia&&ev.terapia.dose||'?'))+'mg/die'
-        +(ev.motivo?' · Motivo: '+ev.motivo:''), ref:'Terapia' });
+        +(ev.motivo?' · Motivo: '+escHtml(ev.motivo):''), ref:'Terapia', protId:null });
   });
 
-  // Protocolli: solo eventi di dispensazione e annullo (rilevanti per lo storico)
   var prots = protocolliDiPaziente(p.id);
   prots.forEach(function(pr){
+    var pid = pr.id || pr._id || null;
+    if (pid) _sgProtMap[pid] = pr;
     if (pr.stato==='dispensato' && pr.dispensazione) {
       allEvents.push({ ts:pr.dispensazione.ts, tipo:'dispensazione', op:pr.dispensazione.operatore||'—',
-        dettaglio:'Dispensazione '+modalitaLabel(pr.dispensazione.modalita)+(pr.dispensazione.delegatoNome?' (del. '+pr.dispensazione.delegatoNome+')':''),
-        ref: formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl)+' · '+pr.dose+'mg/die · '+pr.qtaTotale+'mg tot.' });
+        dettaglio:'Dispensazione '+escHtml(modalitaLabel(pr.dispensazione.modalita))+(pr.dispensazione.delegatoNome?' (del. '+escHtml(pr.dispensazione.delegatoNome)+')':''),
+        ref: formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl)+' · '+pr.dose+'mg/die · '+pr.qtaTotale+'mg tot.',
+        protId: pid });
     }
     if (pr.stato==='annullato') {
       allEvents.push({ ts:pr.annulloTs||pr.dataPreprazione||'', tipo:'annullo', op:pr.annulloOp||'—',
-        dettaglio:'Protocollo annullato'+(pr.annulloMotivo?' · '+pr.annulloMotivo:''),
-        ref: formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl) });
+        dettaglio:'Protocollo annullato'+(pr.annulloMotivo?' · '+escHtml(pr.annulloMotivo):''),
+        ref: formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl),
+        protId: pid });
     }
   });
 
-  // Storico paziente (creazione, ecc.)
   (p.storico||[]).forEach(function(ev){
     allEvents.push({ ts:ev.ts||ev.data||'', tipo:ev.tipo||'anagrafica', op:ev.op||'—',
-      dettaglio:ev.azione||'', ref:'Paziente' });
+      dettaglio:escHtml(ev.azione||''), ref:'Paziente', protId:null });
   });
 
-  // Annotazioni libere
   (p.annotazioni||[]).forEach(function(ann){
     allEvents.push({ ts:ann.ts||'', tipo:'annotazione', op:ann.op||'—',
-      dettaglio:'📝 '+escHtml(ann.testo||''), ref:'Annotazione' });
+      dettaglio:'📝 '+escHtml(ann.testo||''), ref:'Annotazione', protId:null });
   });
 
-  allEvents.sort(function(a,b){ return a.ts<b.ts?1:-1; });
+  allEvents.sort(function(a,b){ return sgTsToSort(a.ts)<sgTsToSort(b.ts)?1:-1; });
 
   if (!allEvents.length) {
     el.innerHTML = html+'<div class="empty-state"><div class="icon">📜</div><p>Nessuna voce registrata</p></div>';
     return;
   }
 
-  var iconMap={ creazione:'➕', dispensazione:'📦', annullo:'⚠️', modifica_terapia:'✏️', anagrafica:'👤', annotazione:'📝' };
+  var iconMap = { creazione:'➕', dispensazione:'📦', annullo:'⚠️', modifica_terapia:'✏️', anagrafica:'👤', annotazione:'📝' };
+  var colorMap = { dispensazione:'var(--purple)', annullo:'var(--canceled)', modifica_terapia:'var(--accent)', annotazione:'var(--text3)', anagrafica:'var(--accent)', creazione:'var(--accent)' };
+
   html += allEvents.map(function(ev){
-    return '<div class="storico-item">'+
-      '<div class="storico-date">'+escHtml(ev.ts)+'</div>'+
-      '<div class="storico-action">'+(iconMap[ev.tipo]||'•')+' '+ev.dettaglio+'</div>'+
-      '<div class="storico-detail">Op: <b>'+escHtml(ev.op)+'</b> · '+escHtml(ev.ref)+'</div>'+
-      '</div>';
+    var border = 'border-left-color:'+(colorMap[ev.tipo]||'var(--accent)');
+    var clickAttr = ev.protId
+      ? ' onclick="sgMostraProtocollo(\''+ev.protId.replace(/'/g,"\\'")+'\');" style="cursor:pointer;'+border+'"'
+      : ' style="'+border+'"';
+    return '<div class="storico-item"'+clickAttr+'>'
+      +'<div class="storico-date">'+escHtml(ev.ts)+'</div>'
+      +'<div class="storico-action">'+(iconMap[ev.tipo]||'•')+' '+ev.dettaglio+'</div>'
+      +'<div class="storico-detail">Op: <b>'+escHtml(ev.op)+'</b> · '+ev.ref
+      +(ev.protId?' <span style="color:var(--text3);font-size:11px">· tocca per dettagli</span>':'')+'</div>'
+      +'</div>';
   }).join('');
 
   el.innerHTML = html;
@@ -3831,8 +3836,11 @@ function rimuoviOperatore(i){
 // ════════════════════════════════════════════
 // STORICO GLOBALE
 // ════════════════════════════════════════════
-var _sgVista = 'crono';
+var _sgVista      = 'crono';
 var _sgProtocolli = [];
+var _sgPazienti   = [];
+var _sgAllEvents  = [];
+var _sgProtMap    = {};
 
 function openStoricoGlobale() {
   showScreen('screen-storico-globale');
@@ -3865,34 +3873,40 @@ function sgSortKey(pr) {
 }
 
 function sgCaricaERender() {
-  // Prendi i protocolli già in memoria locale
-  _sgProtocolli = (DB.protocolli || []).slice().sort(function(a,b){
-    return sgSortKey(a) < sgSortKey(b) ? 1 : -1;
-  });
+  _sgProtocolli = (DB.protocolli || []).slice().sort(function(a,b){ return sgSortKey(a) < sgSortKey(b) ? 1 : -1; });
+  _sgPazienti   = (DB.pazienti || []).slice();
+  _sgAllEvents  = sgBuildAllEvents();
+  sgRender();
 
-  // Prova a caricare aggiornamenti da Firestore
-  if (firestoreDB) {
-    document.getElementById('sg-loading').style.display = 'block';
-    firestoreDB.collection('protocolli_metadone')
-      .orderBy('dataPreprazione','desc')
-      .limit(500)
-      .get()
-      .then(function(snap) {
-        _sgProtocolli = [];
-        snap.forEach(function(d){ _sgProtocolli.push(Object.assign({ _id: d.id }, d.data())); });
-        // Ordina anche i risultati Firestore con la stessa logica
-        _sgProtocolli.sort(function(a,b){ return sgSortKey(a) < sgSortKey(b) ? 1 : -1; });
-        document.getElementById('sg-loading').style.display = 'none';
-        sgRender();
-      })
-      .catch(function(e) {
-        console.warn('Storico Firestore:', e);
-        document.getElementById('sg-loading').style.display = 'none';
-        sgRender();
-      });
-  } else {
-    sgRender();
-  }
+  if (!firestoreDB) return;
+  document.getElementById('sg-loading').style.display = 'block';
+
+  var promProt = firestoreDB.collection('protocolli_metadone')
+    .orderBy('dataPreprazione','desc').limit(500).get()
+    .then(function(snap) {
+      _sgProtocolli = [];
+      snap.forEach(function(d){ _sgProtocolli.push(Object.assign({ _id: d.id }, d.data())); });
+      _sgProtocolli.sort(function(a,b){ return sgSortKey(a) < sgSortKey(b) ? 1 : -1; });
+    });
+
+  var promPaz = firestoreDB.collection('pazienti_metadone').get()
+    .then(function(snap) {
+      _sgPazienti = [];
+      snap.forEach(function(d){ _sgPazienti.push(Object.assign({ _id: d.id }, d.data())); });
+    });
+
+  Promise.all([promProt, promPaz])
+    .then(function() {
+      _sgAllEvents = sgBuildAllEvents();
+      document.getElementById('sg-loading').style.display = 'none';
+      sgRender();
+    })
+    .catch(function(e) {
+      console.warn('Storico Firestore:', e);
+      _sgAllEvents = sgBuildAllEvents();
+      document.getElementById('sg-loading').style.display = 'none';
+      sgRender();
+    });
 }
 
 function sgStatoBadge(pr) {
@@ -3907,10 +3921,97 @@ function sgStatoBadge(pr) {
 }
 
 function sgNomePaziente(pr) {
-  // Cerca in DB locale
   var pz = getPaziente(pr.pazienteId);
+  if (!pz) pz = (_sgPazienti || []).find(function(p){ return p.id === pr.pazienteId || p._id === pr.pazienteId; });
   if (pz) return pz.cognome + ' ' + pz.nome;
   return pr.pazienteId || '—';
+}
+
+function sgTsToSort(ts) {
+  if (!ts) return '0000-00-00 00:00';
+  var m = ts.match(/^(\d{2})\.(\d{2})\.(\d{4})[,\s]+(\d{2}):(\d{2})/);
+  if (m) return m[3]+'-'+m[2]+'-'+m[1]+' '+m[4]+':'+m[5];
+  if (/^\d{4}-\d{2}-\d{2}/.test(ts)) return ts+' 00:00';
+  return '0000-00-00 00:00';
+}
+
+function sgBuildAllEvents() {
+  _sgProtMap = {};
+  var events = [];
+  var iconMap = {
+    creazione:'📋', controllo:'🔍', dispensazione:'📦',
+    annullo:'⚠️', duplicazione:'📋', modifica_terapia:'✏️',
+    anagrafica:'👤', annotazione:'📝'
+  };
+
+  (_sgProtocolli || []).forEach(function(pr, i) {
+    var pid = pr._id || pr.id || ('proto_'+i);
+    _sgProtMap[pid] = pr;
+    var pazNome = sgNomePaziente(pr);
+    if (pr.auditTrail && pr.auditTrail.length) {
+      pr.auditTrail.forEach(function(a) {
+        events.push({ ts:a.ts, tsSort:sgTsToSort(a.ts), tipo:a.tipo, op:a.op||'—',
+          dettaglio:(iconMap[a.tipo]||'•')+' '+escHtml(a.dettaglio||a.tipo),
+          pazNome:pazNome, protId:pid });
+      });
+    } else {
+      var ts = (pr.preparatore && pr.preparatore.ts) || pr.dataPreprazione || '';
+      events.push({ ts:ts, tsSort:sgTsToSort(ts), tipo:'creazione',
+        op:(pr.preparatore && pr.preparatore.sigla)||'—',
+        dettaglio:'📋 Preparazione '+escHtml(pr.farmaco||'—')+' '+escHtml(String(pr.dose||'?'))+'mg/die',
+        pazNome:pazNome, protId:pid });
+    }
+  });
+
+  (_sgPazienti || []).forEach(function(p) {
+    var pazNome = (p.cognome||'?')+' '+(p.nome||'');
+    (p.storico || []).forEach(function(ev) {
+      events.push({ ts:ev.ts||ev.data||'', tsSort:sgTsToSort(ev.ts||ev.data||''),
+        tipo:ev.tipo||'anagrafica', op:ev.op||'—',
+        dettaglio:(iconMap[ev.tipo]||'👤')+' '+escHtml(ev.azione||ev.tipo||''),
+        pazNome:pazNome, protId:null });
+    });
+    (p.storiaTerap || []).forEach(function(ev) {
+      events.push({ ts:ev.ts||'', tsSort:sgTsToSort(ev.ts||''),
+        tipo:'modifica_terapia', op:ev.op||'—',
+        dettaglio:'✏️ Modifica terapia: '+escHtml((ev.terapia&&ev.terapia.farmaco)||'—')+' '+escHtml(String((ev.terapia&&ev.terapia.dose)||'?'))+'mg/die'+(ev.motivo?' · '+escHtml(ev.motivo):''),
+        pazNome:pazNome, protId:null });
+    });
+    (p.annotazioni || []).forEach(function(ann) {
+      events.push({ ts:ann.ts||'', tsSort:sgTsToSort(ann.ts||''),
+        tipo:'annotazione', op:ann.op||'—',
+        dettaglio:'📝 '+escHtml(ann.testo||''),
+        pazNome:pazNome, protId:null });
+    });
+  });
+
+  events.sort(function(a,b){ return a.tsSort < b.tsSort ? 1 : -1; });
+  return events;
+}
+
+function sgRenderEventItem(ev) {
+  var colorMap = {
+    dispensazione:'var(--purple)', annullo:'var(--canceled)',
+    controllo:'var(--info)', creazione:'var(--warning)', duplicazione:'var(--warning)',
+    modifica_terapia:'var(--accent)', annotazione:'var(--text3)', anagrafica:'var(--accent)'
+  };
+  var border = 'border-left-color:'+(colorMap[ev.tipo]||'var(--accent)');
+  var clickAttr = ev.protId
+    ? ' onclick="sgMostraProtocollo(\''+ev.protId.replace(/'/g,"\\'")+'\');" style="cursor:pointer;'+border+'"'
+    : ' style="'+border+'"';
+  return '<div class="storico-item"'+clickAttr+'>'
+    +'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin-bottom:1px">'+escHtml(ev.pazNome)+'</div>'
+    +'<div class="storico-date">'+escHtml(ev.ts)+'</div>'
+    +'<div class="storico-action">'+ev.dettaglio+'</div>'
+    +'<div class="storico-detail">Op: <b>'+escHtml(ev.op)+'</b>'+(ev.protId?' <span style="color:var(--text3);font-size:11px">· tocca per dettagli</span>':'')+'</div>'
+    +'</div>';
+}
+
+function sgMostraProtocollo(pid) {
+  var pr = _sgProtMap[pid];
+  if (!pr) return;
+  mostraModal('📋 Dettaglio preparazione', sgBuildCard(pr),
+    '<button class="btn btn-ghost" onclick="chiudiModal()">Chiudi</button>');
 }
 
 function sgBuildCard(pr) {
@@ -3947,54 +4048,75 @@ function sgRender() {
   ['crono','paziente','data'].forEach(function(v){
     document.getElementById('sg-view-'+v).style.display = v===_sgVista ? 'block' : 'none';
   });
-  document.getElementById('sg-header-sub').textContent = _sgProtocolli.length + ' preparazioni totali';
+  document.getElementById('sg-header-sub').textContent = _sgAllEvents.length + ' eventi totali';
 
-  // ── CRONOLOGICO
   if (_sgVista === 'crono') {
-    if (!_sgProtocolli.length) {
-      document.getElementById('sg-view-crono').innerHTML = '<div class="empty-state"><div class="icon">📜</div><p>Nessuna preparazione registrata</p></div>';
+    if (!_sgAllEvents.length) {
+      document.getElementById('sg-view-crono').innerHTML = '<div class="empty-state"><div class="icon">📜</div><p>Nessun evento registrato</p></div>';
       return;
     }
-    document.getElementById('sg-view-crono').innerHTML = _sgProtocolli.map(sgBuildCard).join('');
+    document.getElementById('sg-view-crono').innerHTML = _sgAllEvents.map(sgRenderEventItem).join('');
     return;
   }
 
-  // ── PER PAZIENTE — card inline raggruppate per paziente
   if (_sgVista === 'paziente') {
-    var byP = {};
-    _sgProtocolli.forEach(function(pr) {
-      var nome = sgNomePaziente(pr);
-      if (!byP[nome]) byP[nome] = [];
-      byP[nome].push(pr);
+    var nomi = [], seen = {};
+    _sgAllEvents.forEach(function(ev) {
+      if (!seen[ev.pazNome]) { seen[ev.pazNome] = true; nomi.push(ev.pazNome); }
     });
-    var html = '';
-    Object.keys(byP).sort().forEach(function(nome) {
-      var list = byP[nome];
-      html += '<div class="sg-group">👤 '+escHtml(nome)+' · '+list.length+' preparazioni</div>';
-      html += list.map(sgBuildCard).join('');
+    nomi.sort();
+    var html = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">';
+    nomi.forEach(function(nome) {
+      var n = _sgAllEvents.filter(function(ev){ return ev.pazNome === nome; }).length;
+      html += '<button class="btn btn-ghost" style="font-size:13px;padding:6px 14px;border-radius:20px" onclick="sgFiltroPaziente(\''+nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">👤 '+escHtml(nome)+' <span class="badge badge-gray" style="margin-left:4px">'+n+'</span></button>';
     });
-    document.getElementById('sg-view-paziente').innerHTML = html || '<div class="empty-state"><div class="icon">👤</div><p>Nessuna preparazione</p></div>';
+    html += '</div><div id="sg-paz-eventi"><div class="empty-state"><div class="icon">👤</div><p>Seleziona un paziente</p></div></div>';
+    document.getElementById('sg-view-paziente').innerHTML = html || '<div class="empty-state"><div class="icon">👤</div><p>Nessun paziente</p></div>';
     return;
   }
 
-  // ── PER DATA — date picker + lista cronologica filtrata
   if (_sgVista === 'data') {
-    // Reset risultati, mantieni il picker
-    document.getElementById('sg-data-risultati').innerHTML = '<div class="empty-state"><div class="icon">📆</div><p>Seleziona una data per vedere le preparazioni</p></div>';
     document.getElementById('sg-data-input').value = '';
+    // Chip date attive
+    var dateMap = {};
+    _sgAllEvents.forEach(function(ev) {
+      var d = ev.tsSort ? ev.tsSort.substring(0,10) : null;
+      if (d && d !== '0000-00-00') { dateMap[d] = (dateMap[d]||0) + 1; }
+    });
+    var dates = Object.keys(dateMap).sort().reverse();
+    document.getElementById('sg-data-chips').innerHTML = dates.slice(0,60).map(function(d) {
+      return '<button onclick="sgFiltroData(\''+d+'\')" style="flex-shrink:0;padding:5px 11px;border-radius:20px;border:1.5px solid var(--accent);background:var(--accent-light);color:var(--accent-dark);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">'
+        +escHtml(formatDate(d))+' <span style="background:var(--accent);color:white;border-radius:10px;padding:1px 5px;font-size:10px">'+dateMap[d]+'</span></button>';
+    }).join('');
+    // Ultimi eventi di default
+    var recent = _sgAllEvents.slice(0,25);
+    document.getElementById('sg-data-risultati').innerHTML = recent.length
+      ? '<div class="sg-group">Ultimi eventi</div>'+recent.map(sgRenderEventItem).join('')
+      : '<div class="empty-state"><div class="icon">📆</div><p>Nessun evento</p></div>';
     return;
   }
 }
 
 function sgFiltroData(val) {
+  var inp = document.getElementById('sg-data-input');
+  if (inp) inp.value = val || '';
   var el = document.getElementById('sg-data-risultati');
   if (!val) { el.innerHTML = ''; return; }
-  var list = _sgProtocolli.filter(function(pr){ return pr.dataPreprazione === val; });
+  var list = _sgAllEvents.filter(function(ev){ return ev.tsSort && ev.tsSort.startsWith(val); });
   if (!list.length) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">📆</div><p>Nessuna preparazione registrata per il '+escHtml(formatDate(val))+'</p></div>';
+    el.innerHTML = '<div class="empty-state"><div class="icon">📆</div><p>Nessun evento registrato per il '+escHtml(formatDate(val))+'</p></div>';
   } else {
-    el.innerHTML = '<div class="sg-group">'+list.length+' preparazion' + (list.length===1?'e':'i') + ' del '+escHtml(formatDate(val))+'</div>' + list.map(sgBuildCard).join('');
+    el.innerHTML = '<div class="sg-group">'+list.length+' event'+(list.length===1?'o':'i')+' del '+escHtml(formatDate(val))+'</div>' + list.map(sgRenderEventItem).join('');
   }
+}
+
+function sgFiltroPaziente(nome) {
+  var list = _sgAllEvents.filter(function(ev){ return ev.pazNome === nome; });
+  var el = document.getElementById('sg-paz-eventi');
+  if (!el) return;
+  el.innerHTML = list.length
+    ? '<div class="sg-group">👤 '+escHtml(nome)+' · '+list.length+' eventi</div>'+list.map(sgRenderEventItem).join('')
+    : '<div class="empty-state"><div class="icon">👤</div><p>Nessun evento per '+escHtml(nome)+'</p></div>';
 }
 
 
