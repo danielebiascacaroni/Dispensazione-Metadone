@@ -1380,7 +1380,7 @@ function createSingleInstanceGuard(appKey) {
   var LOCK_KEY = 'fa_single_instance:' + appKey;
   var instanceId = 'inst_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
   var HEARTBEAT_MS = 4000;
-  var STALE_MS = 15000;
+  var STALE_MS = 45000;
   var heartbeatTimer = null;
   var storageListener = null;
 
@@ -1451,6 +1451,9 @@ function createSingleInstanceGuard(appKey) {
 
       window.addEventListener('pagehide', releaseLock);
       window.addEventListener('beforeunload', releaseLock);
+      window.addEventListener('pageshow', function(e) {
+        if (e.persisted) writeLock();
+      });
       document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible') {
           var current = readLock();
@@ -1467,6 +1470,14 @@ if (FIREBASE_ENABLED) {
   singleInstanceGuard = createSingleInstanceGuard('dispensazione_metadone');
   if (!singleInstanceGuard.start()) {
     FIREBASE_ENABLED = false;
+  } else {
+    if (typeof BroadcastChannel !== 'undefined') {
+      new BroadcastChannel('fa_operator_sync').onmessage = function(e) {
+        if (e.data && (e.data.type === 'logout' || e.data.type === 'operator_changed')) {
+          if (typeof doLogoutTS === 'function') doLogoutTS();
+        }
+      };
+    }
   }
 }
 if (FIREBASE_ENABLED) {
