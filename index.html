@@ -1533,9 +1533,9 @@ if (FIREBASE_ENABLED) {
       if (!_authInitialized) {
         _authInitialized = true;
         if (!user) {
-          firebase.auth().signInAnonymously().catch(function(e){
-            console.warn('Firebase auth anonima fallita:', e.code);
-          });
+          // Mostra subito il login con operatori in cache, senza aspettare auth anonima
+          loadData().then(function(){ initLoginScreen(); }).catch(function(){ initLoginScreen(); });
+          firebase.auth().signInAnonymously().catch(function(e){ console.warn('Firebase auth anonima fallita:', e.code); });
           return;
         }
       }
@@ -1614,7 +1614,10 @@ function loadData() {
   var loadOperatori = firestoreDB.collection(_colOperatori).get().then(function(snap) {
     var res = [];
     snap.forEach(function(doc){ res.push(doc.data()); });
-    if (res.length) OPERATORI = res;
+    if (res.length) { OPERATORI = res; try { localStorage.setItem('fa_operatori_cache', JSON.stringify(res)); } catch(e){} }
+  }).catch(function(){
+    var cached = localStorage.getItem('fa_operatori_cache');
+    if (cached) { try { OPERATORI = JSON.parse(cached); } catch(e){} }
   });
 
   return Promise.all([loadPazienti, loadProtocolli, loadOperatori])
