@@ -46,7 +46,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 .screen.active { display: flex; }
 
 /* ── HEADER ── */
-.header { background: var(--accent-dark); color: white; padding: 14px 20px; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.header { background: var(--accent-dark); color: white; padding: 14px 20px; display: grid; grid-template-columns: 44px 1fr auto; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 .header-back { background: rgba(255,255,255,0.15); border: none; color: white; width: 38px; height: 38px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; justify-self: start; }
 .header-back:active { background: rgba(255,255,255,0.25); }
 .header-title { font-size: 18px; font-weight: 600; text-align: center; }
@@ -54,6 +54,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 .header-action { background: rgba(255,255,255,0.15); border: none; color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font); transition: background 0.2s; }
 .header-action:active { background: rgba(255,255,255,0.25); }
 .header-user { font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.95); border-radius: 20px; padding: 5px 12px; color: var(--accent-dark); cursor: pointer; white-space: nowrap; border: none; }
+.header-back-abs { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.15); border: none; color: white; width: 38px; height: 38px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; -webkit-tap-highlight-color: transparent; }
+.header-back-abs:active { background: rgba(255,255,255,0.25); }
 
 /* ── CONTENT ── */
 .content { padding: 20px; flex: 1; overflow-y: auto; }
@@ -530,11 +532,18 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN: STORICO GLOBALE
 ═══════════════════════════════════════ -->
 <div id="screen-storico-globale" class="screen">
-  <div class="header">
-    <button class="header-back" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
-    <div>
-      <div class="header-title">Storico Generale</div>
-      <div class="header-subtitle" id="sg-header-sub">Terapie Sostitutive</div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name">Storico Generale</div>
+      <div class="logo-op-line" data-op-full>—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
     </div>
   </div>
   <div class="content">
@@ -562,9 +571,19 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN: DA CONTROLLARE
 ═══════════════════════════════════════ -->
 <div id="screen-da-controllare" class="screen">
-  <div class="header">
-    <button class="header-back" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
-    <div class="header-title">Da controllare</div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name">Da controllare</div>
+      <div class="logo-op-line" data-op-full>—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+    </div>
   </div>
   <div class="content">
     <div id="da-controllare-list"></div>
@@ -576,9 +595,19 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 2 — VISTA GIORNALIERA
 ═══════════════════════════════════════ -->
 <div id="screen-vista-giornaliera" class="screen">
-  <div class="header">
-    <button class="header-back" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
-    <div class="header-title">Ricerca per data</div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name">Ricerca per data</div>
+      <div class="logo-op-line" data-op-full>—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+    </div>
   </div>
   <div class="content">
     <div class="form-group" style="margin-bottom:16px">
@@ -594,9 +623,19 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 3 — LISTA PAZIENTI
 ═══════════════════════════════════════ -->
 <div id="screen-pazienti" class="screen">
-  <div class="header">
-    <button class="header-back" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
-    <div class="header-title">Pazienti</div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name">Pazienti</div>
+      <div class="logo-op-line" data-op-full>—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+    </div>
   </div>
   <div class="content">
     <div class="search-wrap">
@@ -617,15 +656,20 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 4 — SCHEDA PAZIENTE
 ═══════════════════════════════════════ -->
 <div id="screen-paziente" class="screen">
-  <div class="header" style="grid-template-columns:44px 1fr auto">
-    <button class="header-back" onclick="showScreen('screen-pazienti');renderListaPazienti()">←</button>
-    <div>
-      <div class="header-title" id="pz-header-nome"></div>
-      <div class="header-subtitle" id="pz-header-meta"></div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-pazienti');renderListaPazienti()">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name" id="pz-hdr-nome">—</div>
+      <div class="logo-sub" id="pz-hdr-ddn">—</div>
+      <div class="logo-sub" id="pz-hdr-medico">—</div>
     </div>
-    <div style="text-align:right;padding-left:8px">
-      <div style="font-size:11px;font-weight:500;color:rgba(255,255,255,0.7);line-height:1.3" id="pz-hdr-date">—</div>
-      <div style="font-size:20px;font-weight:300;letter-spacing:1px;font-variant-numeric:tabular-nums;line-height:1.1" id="pz-hdr-time">—</div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+      <div class="logo-op-line" data-op-full>—</div>
     </div>
   </div>
   <div class="content">
@@ -648,11 +692,20 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 5 — NUOVA PREPARAZIONE
 ═══════════════════════════════════════ -->
 <div id="screen-nuova-prep" class="screen">
-  <div class="header">
-    <button class="header-back" onclick="showScreen('screen-paziente')">←</button>
-    <div>
-      <div class="header-title" id="prep-header-title">Nuova preparazione</div>
-      <div class="header-subtitle" id="prep-header-paziente"></div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-paziente')">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name" id="prep-hdr-nome">—</div>
+      <div class="logo-sub" id="prep-hdr-ddn">—</div>
+      <div class="logo-sub" id="prep-hdr-medico">—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+      <div class="logo-op-line" data-op-full>—</div>
     </div>
   </div>
   <div class="content">
@@ -763,11 +816,20 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 6 — MODULO CONTROLLO
 ═══════════════════════════════════════ -->
 <div id="screen-controllo" class="screen">
-  <div class="header">
-    <button class="header-back" onclick="showScreen('screen-paziente')">←</button>
-    <div>
-      <div class="header-title">Controllo preparazione</div>
-      <div class="header-subtitle" id="ctrl-header-sub"></div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-paziente')">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name" id="ctrl-hdr-nome">—</div>
+      <div class="logo-sub" id="ctrl-hdr-ddn">—</div>
+      <div class="logo-sub" id="ctrl-hdr-medico">—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+      <div class="logo-op-line" data-op-full>—</div>
     </div>
   </div>
   <div class="content">
@@ -835,11 +897,20 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 7 — MODULO DISPENSAZIONE
 ═══════════════════════════════════════ -->
 <div id="screen-dispensazione" class="screen">
-  <div class="header">
-    <button class="header-back" onclick="showScreen('screen-paziente')">←</button>
-    <div>
-      <div class="header-title">Dispensazione</div>
-      <div class="header-subtitle" id="disp-header-sub"></div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-paziente')">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name" id="disp-hdr-nome">—</div>
+      <div class="logo-sub" id="disp-hdr-ddn">—</div>
+      <div class="logo-sub" id="disp-hdr-medico">—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+      <div class="logo-op-line" data-op-full>—</div>
     </div>
   </div>
   <div class="content">
@@ -886,9 +957,21 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 8 — FIRMA PAZIENTE (iPad canvas)
 ═══════════════════════════════════════ -->
 <div id="screen-firma" class="screen">
-  <div class="header" style="background:var(--accent-dark)">
-    <button class="header-back" onclick="showScreen('screen-dispensazione')">←</button>
-    <div class="header-title">Firma ricevente</div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-dispensazione')">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name" id="firma-hdr-nome">—</div>
+      <div class="logo-sub" id="firma-hdr-ddn">—</div>
+      <div class="logo-sub" id="firma-hdr-medico">—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+      <div class="logo-op-line" data-op-full>—</div>
+    </div>
   </div>
   <div class="content" style="display:flex;flex-direction:column">
     <!-- Riepilogo compatto -->
@@ -916,11 +999,20 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 9 — DUPLICAZIONE RAPIDA
 ═══════════════════════════════════════ -->
 <div id="screen-duplica" class="screen">
-  <div class="header">
-    <button class="header-back" onclick="showScreen('screen-paziente')">←</button>
-    <div>
-      <div class="header-title">Duplicazione rapida</div>
-      <div class="header-subtitle" id="duplica-subtitle"></div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-paziente')">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name" id="dup-hdr-nome">—</div>
+      <div class="logo-sub" id="dup-hdr-ddn">—</div>
+      <div class="logo-sub" id="dup-hdr-medico">—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+      <div class="logo-op-line" data-op-full>—</div>
     </div>
   </div>
   <div class="content">
@@ -962,9 +1054,19 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 10 — NUOVO PAZIENTE
 ═══════════════════════════════════════ -->
 <div id="screen-nuovo-paziente" class="screen">
-  <div class="header">
-    <button class="header-back" onclick="showScreen('screen-pazienti');renderListaPazienti()">←</button>
-    <div class="header-title">Nuovo paziente</div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-pazienti');renderListaPazienti()">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name">Nuovo paziente</div>
+      <div class="logo-op-line" data-op-full>—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+    </div>
   </div>
   <div class="content">
     <div class="form-row">
@@ -1070,11 +1172,20 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 12 — MODIFICA TERAPIA
 ═══════════════════════════════════════ -->
 <div id="screen-modifica-terapia" class="screen">
-  <div class="header">
-    <button class="header-back" id="mt-back-btn" onclick="tornaScheda()">←</button>
-    <div>
-      <div class="header-title">Modifica terapia</div>
-      <div class="header-subtitle" id="mt-header-paziente"></div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" id="mt-back-btn" onclick="tornaScheda()">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name" id="mt-hdr-nome">—</div>
+      <div class="logo-sub" id="mt-hdr-ddn">—</div>
+      <div class="logo-sub" id="mt-hdr-medico">—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+      <div class="logo-op-line" data-op-full>—</div>
     </div>
   </div>
   <div class="content">
@@ -1170,11 +1281,20 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 11b — TERAPIA FUTURA
 ═══════════════════════════════════════ -->
 <div id="screen-terapia-futura" class="screen">
-  <div class="header">
-    <button class="header-back" onclick="tornaScheda()">←</button>
-    <div>
-      <div class="header-title" id="tf-header-title">Terapia futura</div>
-      <div class="header-subtitle" id="tf-header-paziente"></div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="tornaScheda()">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name" id="tf-hdr-nome">—</div>
+      <div class="logo-sub" id="tf-hdr-ddn">—</div>
+      <div class="logo-sub" id="tf-hdr-medico">—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+      <div class="logo-op-line" data-op-full>—</div>
     </div>
   </div>
   <div class="content">
@@ -1245,9 +1365,19 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
      SCREEN 11 — GESTIONE OPERATORI
 ═══════════════════════════════════════ -->
 <div id="screen-operatori" class="screen">
-  <div class="header">
-    <button class="header-back" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
-    <div class="header-title">Gestione Operatori</div>
+  <div class="logo-header" style="position:relative">
+    <button class="header-back-abs" onclick="showScreen('screen-dashboard');renderDashboard()">←</button>
+    <img class="logo-header-img" src="logo.png" alt="Farmacia Ascona">
+    <div class="logo-header-divider"></div>
+    <div class="logo-header-text">
+      <div class="logo-name">Gestione Operatori</div>
+      <div class="logo-op-line" data-op-full>—</div>
+    </div>
+    <div class="logo-header-divider"></div>
+    <div class="logo-date-block">
+      <div class="logo-date" data-hdr-date>—</div>
+      <div class="logo-time" data-hdr-time>—</div>
+    </div>
   </div>
   <div class="content">
     <div class="alert-box alert-warning">🔐 Ogni operatore usa un solo PIN. Permessi per ruolo: farmacista = tutto, assistente = controllo e dispensazione.</div>
@@ -1563,16 +1693,26 @@ async function sha256(msg) {
 // ════════════════════════════════════════════
 // FIRESTORE HELPERS
 // ════════════════════════════════════════════
+function firestoreErrorMsg(e) {
+  var code = (e && e.code) || '';
+  if (code === 'resource-exhausted')  return '⚠️ Quota Firebase esaurita — controlla la fatturazione sul cloud';
+  if (code === 'unauthenticated')     return '⚠️ Sessione scaduta — ricarica la pagina e accedi di nuovo';
+  if (code === 'permission-denied')   return '⚠️ Accesso negato — sessione non autorizzata';
+  if (code === 'unavailable')         return '⚠️ Firebase non raggiungibile — controlla la connessione';
+  if (code === 'not-found')           return '⚠️ Documento non trovato sul cloud';
+  return '⚠️ Sincronizzazione cloud non riuscita (' + (code || 'errore sconosciuto') + ')';
+}
+
 function sincronizzaPaziente(p) {
   if (!FIREBASE_ENABLED || !firestoreDB) return;
   firestoreDB.collection('pazienti_metadone').doc(p.id).set(p)
-    .catch(function(e){ console.error('Sync paziente:', e.code); showToast('⚠️ Sincronizzazione cloud non riuscita', 'error'); });
+    .catch(function(e){ console.error('Sync paziente:', e.code); showToast(firestoreErrorMsg(e), 'error'); });
 }
 
 function sincronizzaProtocollo(pr) {
   if (!FIREBASE_ENABLED || !firestoreDB) return;
   firestoreDB.collection('protocolli_metadone').doc(pr.id).set(pr)
-    .catch(function(e){ console.error('Sync protocollo:', e.code); showToast('⚠️ Sincronizzazione cloud non riuscita', 'error'); });
+    .catch(function(e){ console.error('Sync protocollo:', e.code); showToast(firestoreErrorMsg(e), 'error'); });
 }
 
 function eliminaProtocolloFirestore(id) {
@@ -1594,6 +1734,17 @@ function eliminaProtocolloFirestore(id) {
 function loadData() {
   if (!FIREBASE_ENABLED || !firestoreDB) return Promise.resolve();
 
+  var _loadErrShown = false;
+  function _onLoadError(ctx) {
+    return function(e) {
+      console.warn(ctx + ' non caricato:', e.code);
+      if (!_loadErrShown && e.code && e.code !== 'permission-denied') {
+        _loadErrShown = true;
+        showToast(firestoreErrorMsg(e), 'error');
+      }
+    };
+  }
+
   var loadPazienti = firestoreDB.collection('pazienti_metadone').get().then(function(snap) {
     var res = [];
     snap.forEach(function(doc){
@@ -1601,13 +1752,13 @@ function loadData() {
       if (!isArchivedMetadonePatient(data)) res.push(data);
     });
     DB.pazienti = res;
-  }).catch(function(e){ console.warn('Pazienti non caricati (accesso anonimo):', e.code); });
+  }).catch(_onLoadError('Pazienti'));
 
   var loadProtocolli = firestoreDB.collection('protocolli_metadone').get().then(function(snap) {
     var res = [];
     snap.forEach(function(doc){ res.push(doc.data()); });
     if (res.length) DB.protocolli = res;
-  }).catch(function(e){ console.warn('Protocolli non caricati (accesso anonimo):', e.code); });
+  }).catch(_onLoadError('Protocolli'));
 
   var _user = firebase.auth().currentUser;
   var _colOperatori = (_user && !_user.isAnonymous) ? 'operatori' : 'operatori_pubblici';
@@ -1797,7 +1948,7 @@ function normalizeRuolo(ruolo) {
 }
 function isFarmacista(operatore) {
   var r = normalizeRuolo(operatore && operatore.ruolo);
-  return r === 'farmacista' || r === 'farmacista e assistente';
+  return r === 'farmacista' || r === 'titolare' || r === 'farmacista e assistente' || r === 'farmacista e amministratore' || r === 'amministratore';
 }
 function isAssistente(operatore) {
   var r = normalizeRuolo(operatore && operatore.ruolo);
@@ -1965,6 +2116,7 @@ async function attivaOperatore(op) {
   if (opLine) { opLine.innerHTML='<span>&#x1F464;</span> '+escHtml(op.nome); opLine.style.display=''; }
   var logoutBtn = document.getElementById('dash-logout-btn');
   if (logoutBtn) logoutBtn.style.display='';
+  refreshOpBadges();
   await loadData();
   startSessionTimer();
   showScreen('screen-dashboard');
@@ -2018,6 +2170,7 @@ function logout() {
   var ov = document.getElementById('lock-overlay');
   if (ov) ov.style.display='none';
   document.getElementById('header-user-badge').textContent='—';
+  refreshOpBadges();
   var opLine = document.getElementById('dash-op-line');
   if (opLine) { opLine.style.display='none'; opLine.innerHTML=''; }
   var logoutBtn = document.getElementById('dash-logout-btn');
@@ -2025,6 +2178,20 @@ function logout() {
   initLoginScreen();
   showScreen('screen-login');
 }
+function refreshOpBadges() {
+  var nome = (currentOperatore && currentOperatore.nome) ? currentOperatore.nome : '—';
+  document.querySelectorAll('[data-op-full]').forEach(function(el){ el.textContent = nome; });
+}
+
+function setHdrPaziente(prefix, pz) {
+  var nome = document.getElementById(prefix+'-hdr-nome');
+  var ddn  = document.getElementById(prefix+'-hdr-ddn');
+  var med  = document.getElementById(prefix+'-hdr-medico');
+  if (nome) nome.textContent = pz.cognome+' '+pz.nome;
+  if (ddn)  ddn.textContent  = formatDate(pz.ddn)+' · '+formatAge(pz.ddn);
+  if (med)  med.textContent  = pz.medico||'—';
+}
+
 function doLogoutTS() {
   var ov = document.getElementById('lock-overlay');
   if (ov) ov.style.display='none';
@@ -2087,6 +2254,7 @@ function unlockSession(op) {
   if (opLine) { opLine.innerHTML='<span>&#x1F464;</span> '+escHtml(op.nome); opLine.style.display=''; }
   var logoutBtn = document.getElementById('dash-logout-btn');
   if (logoutBtn) logoutBtn.style.display='';
+  refreshOpBadges();
   startSessionTimer();
   showToast('Bentornato '+op.nome, 'success');
 }
@@ -2258,7 +2426,7 @@ function renderDashboard() {
       // Privacy: solo iniziali
       var iniziali = (pz.cognome.charAt(0).toUpperCase()+'.'+pz.nome.charAt(0).toUpperCase()+'.');
       var giorno = escHtml(pz.giornoConsegna || '—');
-      return '<div class="patient-item" onclick="openPaziente(\''+pz.id+'\')">'+
+      return '<div class="patient-item" onclick="openPaziente(\''+pz.id+'\',\'dispensazione\')">'+
         '<div class="patient-avatar" style="background:var(--accent)">💊</div>'+
         '<div class="patient-info">'+
         '<div class="patient-name" style="font-size:20px;font-weight:800;font-family:var(--mono)">'+escHtml(iniziali)+'</div>'+
@@ -2369,15 +2537,17 @@ function renderListaPazienti() {
 // ════════════════════════════════════════════
 // SCHEDA PAZIENTE
 // ════════════════════════════════════════════
-function openPaziente(id) {
+function openPaziente(id, tab) {
   if (!currentOperatore) { logout(); return; }
   currentPazienteId = id;
   var p = getCP();
   if (!p) return;
-  document.getElementById('pz-header-nome').textContent = p.cognome+' '+p.nome;
-  document.getElementById('pz-header-meta').textContent = formatDate(p.ddn)+' · '+formatAge(p.ddn)+' · '+escHtml(p.medico||'—');
-  document.querySelectorAll('#screen-paziente .tab-btn').forEach(function(b,i){ b.classList.toggle('active',i===0); });
-  switchTabPz('terapia', null);
+  tab = tab || 'terapia';
+  setHdrPaziente('pz', p);
+  var tabs = ['terapia','preparazione','dispensazione','info','storico'];
+  var tabIdx = tabs.indexOf(tab); if (tabIdx < 0) tabIdx = 0;
+  document.querySelectorAll('#screen-paziente .tab-btn').forEach(function(b,i){ b.classList.toggle('active',i===tabIdx); });
+  switchTabPz(tab, null);
   showScreen('screen-paziente');
 }
 
@@ -2420,14 +2590,21 @@ function renderTabTerapia(p) {
   html += '<div class="info-row"><span class="info-key">Modalità usuale</span><span class="info-val">'+modalitaIcon(p.modalitaUsuale)+' '+escHtml(modalitaLabel(p.modalitaUsuale))+'</span></div>';
   html += '</div>';
 
+  // Pulsante modifica terapia — subito sotto la terapia attiva
+  html += '<button class="btn btn-ghost btn-full" onclick="richiediFirmaModificaTerapia()" style="margin-bottom:14px">✏️ Modifica terapia</button>';
+
   // Terapia precedente (se presente)
   if (p.storiaTerap && p.storiaTerap.length) {
     var prev = p.storiaTerap[p.storiaTerap.length - 1];
-    html += '<div class="card" style="opacity:.6;margin-bottom:14px">';
-    html += '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Terapia precedente</div>';
-    html += '<div style="font-size:14px;font-weight:600;color:var(--text2)">'+escHtml((prev.terapia&&prev.terapia.farmaco)||'—')+'</div>';
-    html += '<div style="font-size:13px;color:var(--text3)">'+escHtml(String((prev.terapia&&prev.terapia.dose)||'?'))+' mg/die · '+escHtml(prev.terapia&&prev.terapia.forma||'')+'</div>';
-    html += '<div style="font-size:12px;color:var(--text3);margin-top:4px">Sostituita il '+escHtml(prev.dataFine ? formatDate(prev.dataFine) : '—')+(prev.motivo?' · '+escHtml(prev.motivo):'')+'</div>';
+    html += '<div class="card" style="background:var(--surface2);border-color:var(--border);margin-bottom:14px">';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Terapia precedente</div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:2px">';
+    html += '<div style="font-size:15px;font-weight:700;color:var(--text)">'+escHtml((prev.terapia&&prev.terapia.farmaco)||'—')+'</div>';
+    html += '<div style="font-size:17px;font-weight:700;color:var(--text2);font-family:var(--mono)">'+escHtml(String((prev.terapia&&prev.terapia.dose)||'?'))+' mg/die</div>';
+    html += '</div>';
+    html += '<div style="font-size:13px;color:var(--text2);margin-bottom:6px">'+escHtml((prev.terapia&&prev.terapia.forma)||'')+'</div>';
+    html += '<div class="info-row"><span class="info-key">Sostituita il</span><span class="info-val" style="font-family:var(--mono)">'+escHtml(prev.dataFine ? formatDate(prev.dataFine) : '—')+'</span></div>';
+    if (prev.motivo) html += '<div class="info-row"><span class="info-key">Motivo</span><span class="info-val">'+escHtml(prev.motivo)+'</span></div>';
     html += '</div>';
   }
 
@@ -2461,15 +2638,12 @@ function renderTabTerapia(p) {
     html += '<div style="font-size:10px;color:var(--text3);margin-top:4px">Registrata da '+escHtml(tf.registrataDa||'—')+' il '+escHtml(tf.registrataTs||'—')+'</div>';
     html += '<div style="display:flex;gap:8px;margin-top:10px">';
     html += '<button class="btn btn-sm btn-ghost" style="flex:1" onclick="openTerapiaFutura()">✏️ Modifica</button>';
-    html += '<button class="btn btn-sm btn-ghost" style="flex:1;color:var(--error)" onclick="confermaEliminaTerapiaFutura()">🗑️ Elimina</button>';
+    html += '<button class="btn btn-sm btn-ghost" style="flex:1;color:var(--danger)" onclick="confermaEliminaTerapiaFutura()">🗑️ Elimina</button>';
     html += '</div>';
     html += '</div>';
   } else {
     html += '<button class="btn btn-ghost btn-full" onclick="openTerapiaFutura()" style="margin-bottom:14px;border-style:dashed;color:var(--text2)">+ Aggiungi terapia futura</button>';
   }
-
-  // Pulsante modifica terapia
-  html += '<button class="btn btn-ghost btn-full" onclick="richiediFirmaModificaTerapia()" style="margin-bottom:14px">✏️ Modifica terapia</button>';
 
   el.innerHTML = html;
 }
@@ -2479,14 +2653,10 @@ function renderTabTerapia(p) {
 // ════════════════════════════════════════════
 function renderTabPreparazione(p) {
   var el = document.getElementById('tab-preparazione');
-  var prots = protocolliDiPaziente(p.id)
-    .filter(function(pr){ return pr.stato!=='dispensato' && pr.stato!=='annullato'; })
-    .sort(function(a,b){ return a.dataPreprazione<b.dataPreprazione?1:-1; });
-  var annullati = protocolliDiPaziente(p.id)
-    .filter(function(pr){ return pr.stato==='annullato'; })
-    .sort(function(a,b){ return a.dataPreprazione<b.dataPreprazione?1:-1; });
+  var mostraAnnullate  = !!(document.getElementById('chk-prep-annullate')  || {}).checked;
+  var mostraModifiche  = !!(document.getElementById('chk-prep-modifiche')  || {}).checked;
 
-  var html = '<div style="display:flex;gap:8px;margin-bottom:16px">';
+  var html = '<div style="display:flex;gap:8px;margin-bottom:12px">';
   html += '<button class="btn btn-primary" style="flex:2" onclick="showNuovaPrep()">+ Nuova preparazione</button>';
   var allProts = protocolliDiPaziente(p.id).filter(function(pr){ return pr.stato!=='annullato'; });
   if (allProts.length) {
@@ -2495,12 +2665,50 @@ function renderTabPreparazione(p) {
   }
   html += '</div>';
 
+  html += '<div style="display:flex;gap:16px;padding:4px 0 12px;flex-wrap:wrap">'
+    + '<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);cursor:pointer">'
+    + '<input type="checkbox" id="chk-prep-annullate" onchange="renderTabPreparazione(getCP())"'+(mostraAnnullate?' checked':'')+'>  Mostra annullate</label>'
+    + '<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);cursor:pointer">'
+    + '<input type="checkbox" id="chk-prep-modifiche" onchange="renderTabPreparazione(getCP())"'+(mostraModifiche?' checked':'')+'>  Modifiche di terapia</label>'
+    + '</div>';
+
+  if (mostraModifiche) {
+    var storia = (p.storiaTerap || []).slice().reverse();
+    if (!storia.length) {
+      html += '<div class="empty-state" style="padding:30px 0"><div class="icon">💊</div><p>Nessuna modifica di terapia registrata</p></div>';
+    } else {
+      html += storia.map(function(ev) {
+        var t = ev.terapia || {};
+        return '<div class="card" style="margin-bottom:10px">'
+          + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
+          + '<div style="font-size:15px;font-weight:700">'+escHtml(t.farmaco||'—')+'</div>'
+          + '<div style="font-size:12px;color:var(--text3);font-family:var(--mono)">'+escHtml(formatDate(ev.dataFine||'')||'—')+'</div>'
+          + '</div>'
+          + '<div style="font-size:13px;color:var(--text2)">'+escHtml(String(t.dose||'?'))+' mg/die'+(t.forma?' · '+escHtml(t.forma):'')+'</div>'
+          + (ev.motivo ? '<div style="font-size:12px;color:var(--text3);margin-top:4px">Motivo: '+escHtml(ev.motivo)+'</div>' : '')
+          + (ev.ordine ? '<div style="font-size:12px;color:var(--text3)">Ordine: '+escHtml(ev.ordine)+'</div>' : '')
+          + '<div style="font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--mono)">Op. '+escHtml(ev.op||'—')+(ev.ts?' · '+escHtml(ev.ts):'')+'</div>'
+          + '</div>';
+      }).join('');
+    }
+    el.innerHTML = html;
+    return;
+  }
+
+  var prots = protocolliDiPaziente(p.id)
+    .filter(function(pr){ return pr.stato !== 'annullato'; })
+    .sort(function(a,b){ return a.dataPreprazione<b.dataPreprazione?1:-1; });
+  var annullati = mostraAnnullate
+    ? protocolliDiPaziente(p.id).filter(function(pr){ return pr.stato==='annullato'; })
+        .sort(function(a,b){ return a.dataPreprazione<b.dataPreprazione?1:-1; })
+    : [];
+
   if (!prots.length && !annullati.length) {
     html += '<div class="empty-state" style="padding:30px 0"><div class="icon">📋</div><p>Nessuna preparazione</p></div>';
   } else {
     html += prots.map(function(pr){ return buildProtCard(pr); }).join('');
     if (annullati.length) {
-      html += '<div style="margin-top:8px;font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:4px 0">Annullati</div>';
+      html += '<div style="margin-top:8px;font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:4px 0">Annullate</div>';
       html += annullati.map(function(pr){ return buildProtCard(pr); }).join('');
     }
   }
@@ -2631,16 +2839,49 @@ function buildProtCard(pr) {
 
 function renderTabInfo(p) {
   var el = document.getElementById('tab-info');
-  var html = '<div class="card">'+
-    '<div class="info-row"><span class="info-key">Cognome e nome</span><span class="info-val">'+escHtml(p.cognome+' '+p.nome)+'</span></div>'+
-    '<div class="info-row"><span class="info-key">Data di nascita</span><span class="info-val">'+formatDate(p.ddn)+' ('+formatAge(p.ddn)+')</span></div>'+
-    '<div class="info-row"><span class="info-key">Telefono</span><span class="info-val">'+escHtml(p.telefono||'—')+'</span></div>'+
-    '<div class="info-row"><span class="info-key">Indirizzo</span><span class="info-val">'+escHtml(p.indirizzo||'—')+'</span></div>'+
-    '<div class="info-row"><span class="info-key">Codice paziente</span><span class="info-val" style="font-family:var(--mono)">'+escHtml(p.id||'—')+'</span></div>'+
-    '<div class="info-row"><span class="info-key">Durata standard</span><span class="info-val">'+escHtml(String(p.durataStandard||7))+' giorni</span></div>'+
-    '<div class="info-row"><span class="info-key">Stato terapia</span><span class="info-val"><span class="stato-'+(p.statoTerapia||'attiva')+'">'+escHtml((p.statoTerapia||'ATTIVA').toUpperCase())+'</span></span></div>'+
-    '</div>'+
-    (p.noteOperative ? '<div class="note-box" style="margin-bottom:14px">📝 '+escHtml(p.noteOperative)+'</div>' : '');
+  var stato = p.statoTerapia || 'attiva';
+  var statoColor = stato === 'attiva' ? 'var(--accent-dark)' : 'var(--warning)';
+  var statoBg    = stato === 'attiva' ? 'var(--accent-light)' : 'var(--warning-light)';
+  var ini = (p.cognome.charAt(0)+(p.nome.charAt(0)||'')).toUpperCase();
+
+  // ── Card anagrafica ──
+  var html = '<div class="card" style="margin-bottom:14px">';
+  html += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">';
+  html += '<div style="width:56px;height:56px;border-radius:50%;background:var(--accent-dark);color:white;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0">'+escHtml(ini)+'</div>';
+  html += '<div style="flex:1;min-width:0">';
+  html += '<div style="font-size:20px;font-weight:700;line-height:1.2">'+escHtml(p.cognome)+' '+escHtml(p.nome)+'</div>';
+  html += '<div style="font-size:13px;color:var(--text2);margin-top:2px">'+formatDate(p.ddn)+' &nbsp;·&nbsp; '+formatAge(p.ddn)+'</div>';
+  html += '</div>';
+  html += '<span style="background:'+statoBg+';color:'+statoColor+';font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap">'+escHtml(stato)+'</span>';
+  html += '</div>';
+  html += '<div class="divider" style="margin:0 0 12px"></div>';
+  html += '<div class="info-row"><span class="info-key">📞 Telefono</span><span class="info-val">'+escHtml(p.telefono||'—')+'</span></div>';
+  html += '<div class="info-row"><span class="info-key">📍 Indirizzo</span><span class="info-val">'+escHtml(p.indirizzo||'—')+'</span></div>';
+  html += '</div>';
+
+  // ── Card dettagli clinici ──
+  html += '<div class="card" style="margin-bottom:14px">';
+  html += '<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Dettagli clinici</div>';
+  html += '<div class="info-row"><span class="info-key">Medico</span><span class="info-val">'+escHtml(p.medico||'—')+'</span></div>';
+  html += '<div class="info-row"><span class="info-key">Giorno consegna</span><span class="info-val">'+escHtml(p.giornoConsegna||'—')+'</span></div>';
+  html += '<div class="info-row"><span class="info-key">Modalità usuale</span><span class="info-val">'+modalitaIcon(p.modalitaUsuale)+' '+escHtml(modalitaLabel(p.modalitaUsuale))+'</span></div>';
+  html += '<div class="info-row"><span class="info-key">Durata standard</span><span class="info-val" style="font-family:var(--mono)">'+escHtml(String(p.durataStandard||7))+' giorni</span></div>';
+  html += '<div class="info-row"><span class="info-key">In terapia dal</span><span class="info-val" style="font-family:var(--mono)">'+escHtml(p.dataInizioTerapia ? formatDate(p.dataInizioTerapia) : '—')+'</span></div>';
+  html += '</div>';
+
+  // ── Note operative ──
+  if (p.noteOperative) {
+    html += '<div class="card" style="background:var(--warning-light);border-color:var(--warning);margin-bottom:14px">';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--warning);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">📝 Note operative</div>';
+    html += '<div style="font-size:14px;color:var(--text);line-height:1.5">'+escHtml(p.noteOperative)+'</div>';
+    html += '</div>';
+  }
+
+  // ── ID tecnico ──
+  html += '<div style="text-align:center;padding:8px 0 4px">';
+  html += '<span style="font-size:11px;color:var(--text3);font-family:var(--mono)">ID: '+escHtml(p.id||'—')+'</span>';
+  html += '</div>';
+
   el.innerHTML = html;
 }
 
@@ -2809,8 +3050,7 @@ function openTerapiaFutura() {
   var tf = p.terapiaFutura || {};
   var tfT = tf.terapia || {};
 
-  document.getElementById('tf-header-paziente').textContent = p.cognome + ' ' + p.nome;
-  document.getElementById('tf-header-title').textContent = p.terapiaFutura ? 'Modifica terapia futura' : 'Nuova terapia futura';
+  setHdrPaziente('tf', p);
   document.getElementById('tf-farmaco').value = tfT.farmaco || '';
   document.getElementById('tf-forma').value   = tfT.forma || '';
   document.getElementById('tf-dose').value    = tfT.dose || '';
@@ -2926,10 +3166,8 @@ function confermaEliminaTerapiaFutura() {
   mostraModal(
     '🗑️ Elimina terapia futura',
     '<p style="color:var(--text2)">Sei sicuro di voler eliminare la terapia futura registrata? L\'avviso al momento della preparazione non sarà più mostrato.</p>',
-    '<div style="display:flex;gap:10px">' +
     '<button class="btn btn-ghost" style="flex:1" onclick="chiudiModal()">Annulla</button>' +
-    '<button class="btn btn-primary" style="flex:1;background:var(--error)" onclick="chiudiModal();eliminaTerapiaFutura()">Elimina</button>' +
-    '</div>'
+    '<button class="btn btn-primary" style="flex:1;background:var(--danger)" onclick="chiudiModal();eliminaTerapiaFutura()">Elimina</button>'
   );
 }
 
@@ -2949,7 +3187,7 @@ function openModificaTerapia() {
   var p = getCP(); if (!p) return;
   var t = p.terapia || {};
 
-  document.getElementById('mt-header-paziente').textContent = p.cognome + ' ' + p.nome;
+  setHdrPaziente('mt', p);
   document.getElementById('mt-farmaco').value  = t.farmaco || '';
   document.getElementById('mt-forma').value    = t.forma || '';
   document.getElementById('mt-dose').value     = t.dose || '';
@@ -3132,8 +3370,7 @@ function showNuovaPrep() {
   var p = getCP();
   rimuoviFotoPrep();
 
-  document.getElementById('prep-header-title').textContent = 'Nuova preparazione';
-  document.getElementById('prep-header-paziente').textContent = p.cognome+' '+p.nome;
+  setHdrPaziente('prep', p);
 
   var periodo = proponiPeriodo();
   document.getElementById('prep-data').value  = todayISO();
@@ -3403,8 +3640,9 @@ function openProtocolloControllo(protId) {
   var pr = getProtocollo(protId);
   var pz = pr ? getPaziente(pr.pazienteId) : null;
   if (!pr||!pz) { showToast('Protocollo non trovato','error'); return; }
+  currentPazienteId = pr.pazienteId;
 
-  document.getElementById('ctrl-header-sub').textContent = pz.cognome+' '+pz.nome+' · '+formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl);
+  setHdrPaziente('ctrl', pz);
 
   // Riepilogo
   var giorni = (pr.giorniCoperti||[]).map(function(g){ return '<div class="giorno-cell">'+formatDateShort(g)+'</div>'; }).join('');
@@ -3424,7 +3662,8 @@ function openProtocolloControllo(protId) {
     '<div style="margin-top:8px"><div class="form-label">Giorni coperti</div><div class="giorni-grid">'+giorni+'</div></div>'+
     (pr.note ? '<div class="note-box" style="margin-top:8px">📝 '+escHtml(pr.note)+'</div>' : '')+
     '<div class="divider" style="margin:12px 0"></div>'+
-    '<div class="form-label" style="margin-bottom:4px">Preparatore</div>'+firmaBox(pr.preparatore,'✍️');
+    '<div class="form-label" style="margin-bottom:4px">Preparatore</div>'+firmaBox(pr.preparatore,'✍️')+
+    (pr.fotoUrl ? '<div style="margin-top:12px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:6px">📷 Foto preparazione</div><img src="'+escHtml(pr.fotoUrl)+'" style="width:100%;max-height:240px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--border);display:block;cursor:pointer" onclick="window.open('+jsString(pr.fotoUrl)+',\'_blank\')"></div>' : '');
 
   // Popola select controllori (farmacista o assistente)
   var sel = document.getElementById('ctrl-operatore-sel');
@@ -3575,15 +3814,17 @@ function openProtocolloDispensazione(protId) {
   var pr = getProtocollo(protId);
   var pz = pr ? getPaziente(pr.pazienteId) : null;
   if (!pr||!pz) { showToast('Protocollo non trovato','error'); return; }
+  currentPazienteId = pr.pazienteId;
 
-  document.getElementById('disp-header-sub').textContent = pz.cognome+' '+pz.nome+' · '+formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl);
+  setHdrPaziente('disp', pz);
 
   // Riepilogo box (visibile al paziente)
   document.getElementById('disp-riepilogo').innerHTML =
     '<div class="riepilogo-paziente">'+escHtml(pz.cognome+' '+pz.nome)+'</div>'+
     '<div class="riepilogo-row">Periodo: <b>'+formatDate(pr.periodoDal)+' – '+formatDate(pr.periodoAl)+'</b></div>'+
     '<div class="riepilogo-row">'+escHtml(pr.farmaco)+'</div>'+
-    '<div class="riepilogo-dose">'+pr.dose+' mg/die · '+pr.qtaTotale+' mg tot.</div>';
+    '<div class="riepilogo-dose">'+pr.dose+' mg/die · '+pr.qtaTotale+' mg tot.</div>'+
+    (pr.fotoUrl ? '<div style="margin-top:12px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:6px">📷 Foto preparazione</div><img src="'+escHtml(pr.fotoUrl)+'" style="width:100%;max-height:240px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--border);display:block;cursor:pointer" onclick="window.open('+jsString(pr.fotoUrl)+',\'_blank\')"></div>' : '');
 
   // Modalità (precompilata da modalitaUsuale del paziente)
   _modalitaSelezionata = pz.modalitaUsuale || 'assunzione_farmacia';
@@ -3660,6 +3901,7 @@ function apriSchermataFirma() {
     ' · '+escHtml(pr.farmaco)+' <b>'+pr.dose+'mg/die</b>'+
     ' · '+modalitaIcon(_modalitaSelezionata)+' '+escHtml(modalitaLabel(_modalitaSelezionata));
 
+  setHdrPaziente('firma', pz);
   showScreen('screen-firma');
   initFirmaCanvas();
 }
@@ -3778,7 +4020,7 @@ function showDuplica(sourceId) {
   var pz = pr ? getPaziente(pr.pazienteId) : null;
   if (!pr||!pz) return;
 
-  document.getElementById('duplica-subtitle').textContent = pz.cognome+' '+pz.nome;
+  setHdrPaziente('dup', pz);
 
   // Proponi nuovo periodo
   var p = getCP();
@@ -3846,8 +4088,7 @@ function confermaDuplica() {
 
   // Prepopola form nuova preparazione con i dati duplicati
   currentPazienteId=pr.pazienteId;
-  document.getElementById('prep-header-title').textContent='Nuova preparazione (duplicata)';
-  document.getElementById('prep-header-paziente').textContent=pz.cognome+' '+pz.nome;
+  setHdrPaziente('prep', pz);
   document.getElementById('prep-data').value=todayISO();
   document.getElementById('prep-dal').value=dal;
   document.getElementById('prep-al').value=al;
@@ -4308,7 +4549,7 @@ function showModalNuovoOperatore(){
     '<div class="form-group"><label class="form-label">Nome completo *</label><input type="text" class="form-input" id="new-op-nome" autocapitalize="words"></div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
     '<div class="form-group"><label class="form-label">Sigla (2-3 car.) *</label><input type="text" class="form-input" id="new-op-sigla" maxlength="3" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>'+
-    '<div class="form-group"><label class="form-label">Ruolo</label><select class="form-select" id="new-op-ruolo"><option>Farmacista</option><option>Assistente</option></select></div></div>'+
+    '<div class="form-group"><label class="form-label">Ruolo</label><select class="form-select" id="new-op-ruolo"><option>Farmacista</option><option>Titolare</option><option>Assistente</option></select></div></div>'+
     '<div class="form-group" id="pin-input-group"><label class="form-label" id="pin-input-label">PIN operatore (4 cifre) *</label>'+
     '<input type="password" class="form-input" id="new-op-pin" maxlength="4" inputmode="numeric" pattern="[0-9]*"></div>'+
     '<button class="btn btn-primary btn-full" style="margin-top:8px" onclick="salvaOperatore()">✅ Aggiungi operatore</button>');
@@ -4648,8 +4889,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var elTime      = document.getElementById('hdr-time');
     var elLoginDate = document.getElementById('login-hdr-date');
     var elLoginTime = document.getElementById('login-hdr-time');
-    var elPzDate    = document.getElementById('pz-hdr-date');
-    var elPzTime    = document.getElementById('pz-hdr-time');
     function pad(n) { return n < 10 ? '0' + n : n; }
     function tick() {
       var now = new Date();
@@ -4659,8 +4898,8 @@ document.addEventListener('DOMContentLoaded', function() {
       elTime.textContent      = timeStr;
       elLoginDate.textContent = dateStr;
       elLoginTime.textContent = timeStr;
-      elPzDate.textContent    = dateStr;
-      elPzTime.textContent    = timeStr;
+      document.querySelectorAll('[data-hdr-date]').forEach(function(el){ el.textContent = dateStr; });
+      document.querySelectorAll('[data-hdr-time]').forEach(function(el){ el.textContent = timeStr; });
     }
     tick();
     var ms = (60 - new Date().getSeconds()) * 1000;
