@@ -709,7 +709,11 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
     </div>
   </div>
   <div class="content">
-    <div class="alert-box alert-warning">⚠️ Compilare tutti i campi prima di procedere con la firma del preparatore farmacista.</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <div class="alert-box alert-warning" style="flex:1;margin-bottom:0">⚠️ Compilare tutti i campi prima di procedere con la firma del preparatore farmacista.</div>
+      <button class="btn btn-ghost" id="btn-tl-nuovaprep" onclick="toggleTimelineNuovaPrep()" title="Mostra/nascondi calendario preparazioni" style="padding:8px 10px;flex-shrink:0">📅</button>
+    </div>
+    <div id="nuovaprep-tl" style="display:none"></div>
     <div id="prep-avviso-tf" class="alert-box alert-warning" style="display:none"></div>
 
     <div class="form-row">
@@ -2655,6 +2659,7 @@ function renderTabPreparazione(p) {
   var el = document.getElementById('tab-preparazione');
   var mostraAnnullate  = !!(document.getElementById('chk-prep-annullate')  || {}).checked;
   var mostraModifiche  = !!(document.getElementById('chk-prep-modifiche')  || {}).checked;
+  var tlState = _tlGetState('tabprep-tl');
 
   var html = '<div style="display:flex;gap:8px;margin-bottom:12px">';
   html += '<button class="btn btn-primary" style="flex:2" onclick="showNuovaPrep()">+ Nuova preparazione</button>';
@@ -2663,7 +2668,9 @@ function renderTabPreparazione(p) {
     var lastAttivo = allProts.sort(function(a,b){ return a.dataPreprazione<b.dataPreprazione?1:-1; })[0];
     html += '<button class="btn btn-ghost" style="flex:1" onclick="showDuplica(\''+lastAttivo.id+'\')">⧉ Duplica</button>';
   }
+  html += '<button class="btn btn-ghost" id="btn-tl-tabprep" onclick="toggleTimelineTabPrep(getCP())" title="Mostra/nascondi calendario" style="padding:8px 10px;'+(tlState.visible?'background:var(--accent-light)':'')+'">📅</button>';
   html += '</div>';
+  html += '<div id="tabprep-tl" style="display:'+(tlState.visible?'':'none')+'"></div>';
 
   html += '<div style="display:flex;gap:16px;padding:4px 0 12px;flex-wrap:wrap">'
     + '<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);cursor:pointer">'
@@ -2713,6 +2720,7 @@ function renderTabPreparazione(p) {
     }
   }
   el.innerHTML = html;
+  if (tlState.visible) renderTimelinePrep('tabprep-tl', p, null, null);
 }
 
 // ════════════════════════════════════════════
@@ -2735,10 +2743,7 @@ function buildProtCard(pr) {
   var annullato = pr.stato==='annullato';
   var isDisp    = pr.stato==='dispensato';
   var today = todayISO();
-  var giorni = (pr.giorniCoperti||[]).map(function(g){
-    var isToday = g===today;
-    return '<div class="giorno-cell'+(isToday?' today':'')+(isDisp?' dispensato':'')+'">'+formatDateShort(g)+'</div>';
-  }).join('');
+  var giorni = buildGiornoPillsHtml(pr.giorniCoperti, pr.stato);
 
   // Stato badge — per i dispensati non lo mostriamo nell'header (viene nella bolla viola)
   var statoHtml = isDisp ? '' : '<span class="stato-'+pr.stato+'">'+pr.stato.toUpperCase()+'</span>';
@@ -3332,6 +3337,237 @@ function confermaAnnullaProtocollo(protId, firma, motivo) {
 // ════════════════════════════════════════════
 // NUOVA PREPARAZIONE
 // ════════════════════════════════════════════
+// ════════════════════════════════════════════
+// TIMELINE — PILLS + CALENDARIO MENSILE
+// ════════════════════════════════════════════
+function buildGiornoPillsHtml(giorni, stato) {
+  var today = todayISO();
+  var S = {
+    'preparato':  { bg:'var(--warning-light)', brd:'var(--warning)',  tx:'#92400e' },
+    'controllato':{ bg:'var(--info-light)',    brd:'var(--info)',     tx:'#1e3a5f' },
+    'dispensato': { bg:'var(--accent-light)',  brd:'var(--accent)',   tx:'var(--accent-dark)' },
+    'annullato':  { bg:'var(--surface2)',      brd:'var(--canceled)', tx:'var(--canceled)' }
+  };
+  var c = S[stato] || S['annullato'];
+  return (giorni||[]).map(function(g){
+    var d = new Date(g+'T12:00:00');
+    var DOW = ['Do','Lu','Ma','Me','Gi','Ve','Sa'];
+    var dow = DOW[d.getDay()];
+    var dp  = String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0');
+    var ring = g===today ? ';outline:2.5px solid var(--accent-dark);outline-offset:1px' : '';
+    return '<div style="display:inline-flex;flex-direction:column;align-items:center;padding:5px 8px;border-radius:20px;background:'+c.bg+';border:2px solid '+c.brd+ring+';min-width:42px;text-align:center">'
+      +'<span style="font-size:10px;font-weight:700;line-height:1.2;color:'+c.tx+'">'+dow+'</span>'
+      +'<span style="font-size:11px;font-weight:700;font-family:var(--mono);line-height:1.2;color:'+c.tx+'">'+dp+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+function _tlEaster(y){
+  var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,
+      f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+      h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,
+      l=(32+2*e+2*i-h-k)%7,m2=Math.floor((a+11*h+22*l)/451),
+      mo=Math.floor((h+l-7*m2+114)/31),da=((h+l-7*m2+114)%31)+1;
+  return new Date(y,mo-1,da);
+}
+function _tlLD(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function _tlHolidays(y){
+  var eMs=_tlEaster(y).getTime(), mp=new Map();
+  [[0,1,'Capodanno'],[0,6,'Epifania'],[2,19,'San Giuseppe'],[5,29,'SS. Pietro e Paolo'],
+   [7,1,'Festa nazionale'],[7,15,'Assunzione'],[10,1,'Ognissanti'],
+   [11,8,'Immacolata'],[11,25,'Natale'],[11,26,'Santo Stefano']
+  ].forEach(function(f){ mp.set(_tlLD(new Date(y,f[0],f[1])),f[2]); });
+  [[1,'Lunedì di Pasqua'],[39,'Ascensione'],[49,'Lunedì di Pentecoste']].forEach(function(d){
+    mp.set(_tlLD(new Date(eMs+d[0]*86400000)),d[1]);
+  });
+  return mp;
+}
+
+function ultimoLotto(pazienteId, farmaco) {
+  var fn = (farmaco||'').trim().toLowerCase();
+  var prots = protocolliDiPaziente(pazienteId)
+    .filter(function(pr){ return pr.lotto && pr.farmaco && pr.farmaco.trim().toLowerCase()===fn; })
+    .sort(function(a,b){ return a.dataPreprazione<b.dataPreprazione?1:-1; });
+  return prots.length ? prots[0].lotto : null;
+}
+
+var _tlPrepStates = {};
+function _tlGetState(id){
+  if(!_tlPrepStates[id]){ var n=new Date(); _tlPrepStates[id]={visible:false,y:n.getFullYear(),m:n.getMonth()}; }
+  return _tlPrepStates[id];
+}
+
+var _TL_CAL = {
+  'preparato':  {bg:'rgba(245,158,11,0.18)', bd:'#f59e0b', tx:'#92400e'},
+  'controllato':{bg:'rgba(59,130,246,0.15)', bd:'#3b82f6', tx:'#1e3a5f'},
+  'dispensato': {bg:'rgba(16,185,129,0.18)', bd:'#10b981', tx:'#065f46'},
+  'annullato':  {bg:'rgba(150,150,150,0.18)',bd:'#9ca3af', tx:'#6b7280'}
+};
+var _TL_COLORS = ['#2e7d32','#1565c0','#e65100','#6a1b9a','#c62828','#00838f','#558b2f','#283593','#ad1457','#f57f17'];
+
+function navTimelinePrep(containerId, pazienteId, delta){
+  var st=_tlGetState(containerId);
+  st.m+=delta;
+  if(st.m>11){st.m=0;st.y++;} if(st.m<0){st.m=11;st.y--;}
+  var p=getPaziente(pazienteId);
+  var dal=null,al=null;
+  if(containerId==='nuovaprep-tl'){
+    var dalEl=document.getElementById('prep-dal'), alEl=document.getElementById('prep-al');
+    dal=dalEl?dalEl.value:null; al=alEl?alEl.value:null;
+  }
+  renderTimelinePrep(containerId,p,dal,al);
+}
+
+function toggleTimelineTabPrep(p){
+  var st=_tlGetState('tabprep-tl');
+  st.visible=!st.visible;
+  var el=document.getElementById('tabprep-tl'), btn=document.getElementById('btn-tl-tabprep');
+  if(el) el.style.display=st.visible?'':'none';
+  if(btn) btn.style.background=st.visible?'var(--accent-light)':'';
+  if(st.visible) renderTimelinePrep('tabprep-tl',p,null,null);
+}
+
+function toggleTimelineNuovaPrep(){
+  var st=_tlGetState('nuovaprep-tl');
+  st.visible=!st.visible;
+  var el=document.getElementById('nuovaprep-tl'), btn=document.getElementById('btn-tl-nuovaprep');
+  if(el) el.style.display=st.visible?'':'none';
+  if(btn) btn.style.background=st.visible?'var(--accent-light)':'';
+  if(st.visible){
+    var p=getCP();
+    var dal=document.getElementById('prep-dal')?document.getElementById('prep-dal').value:null;
+    var al=document.getElementById('prep-al')?document.getElementById('prep-al').value:null;
+    renderTimelinePrep('nuovaprep-tl',p,dal,al);
+  }
+}
+
+function aggiornaBozzaTimeline(){
+  var st=_tlPrepStates['nuovaprep-tl'];
+  if(!st||!st.visible) return;
+  var p=getCP();
+  var dal=document.getElementById('prep-dal')?document.getElementById('prep-dal').value:null;
+  var al=document.getElementById('prep-al')?document.getElementById('prep-al').value:null;
+  renderTimelinePrep('nuovaprep-tl',p,dal,al);
+}
+
+function renderTimelinePrep(containerId,p,previewDal,previewAl){
+  var el=document.getElementById(containerId);
+  if(!el) return;
+  var st=_tlGetState(containerId),y=st.y,m=st.m;
+  var holidays=_tlHolidays(y);
+  var MONTHS=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+  var DNAMES=['Lu','Ma','Me','Gi','Ve','Sa','Do'];
+  var today=todayISO();
+
+  // Assegna un colore diverso per ogni protocollo (ordinati per data)
+  var PRIO={'dispensato':4,'controllato':3,'preparato':2,'annullato':1};
+  var cov={};
+  if(p){
+    var validProts=protocolliDiPaziente(p.id)
+      .filter(function(pr){return pr.stato!=='annullato';})
+      .sort(function(a,b){return a.periodoDal<b.periodoDal?-1:1;});
+    var annulledProts=protocolliDiPaziente(p.id)
+      .filter(function(pr){return pr.stato==='annullato';});
+    validProts.forEach(function(pr,idx){
+      var prio=PRIO[pr.stato]||0;
+      (pr.giorniCoperti||[]).forEach(function(g){
+        if(!cov[g]||prio>(PRIO[(cov[g]&&cov[g].stato)]||0)) cov[g]={stato:pr.stato,ci:idx};
+      });
+    });
+    annulledProts.forEach(function(pr){
+      (pr.giorniCoperti||[]).forEach(function(g){
+        if(!cov[g]) cov[g]={stato:'annullato',ci:-1};
+      });
+    });
+  }
+
+  var bozza={};
+  if(previewDal&&previewAl&&previewDal<=previewAl){
+    calcolaGiorniCoperti(previewDal,previewAl).forEach(function(g){if(!cov[g]) bozza[g]=true;});
+  }
+
+  var firstDow=(new Date(y,m,1).getDay()+6)%7;
+  var dim=new Date(y,m+1,0).getDate();
+  var prevM=m===0?11:m-1, prevY=m===0?y-1:y;
+  var prevDim=new Date(prevY,prevM+1,0).getDate();
+  var nextM=m===11?0:m+1, nextY=m===11?y+1:y;
+  var cells=[];
+  for(var i=firstDow-1;i>=0;i--){
+    var pd=prevDim-i;
+    cells.push({ds:prevY+'-'+String(prevM+1).padStart(2,'0')+'-'+String(pd).padStart(2,'0'),ov:true});
+  }
+  for(var dd=1;dd<=dim;dd++){
+    cells.push({ds:y+'-'+String(m+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0'),ov:false});
+  }
+  var nd=1;
+  while(cells.length%7!==0){
+    cells.push({ds:nextY+'-'+String(nextM+1).padStart(2,'0')+'-'+String(nd).padStart(2,'0'),ov:true});
+    nd++;
+  }
+
+  // Fix frecce: singoli apici per evitare rottura dell'attributo HTML
+  var pazId=p?("'"+p.id+"'"):"''";
+  var navBtn='style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:18px;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0"';
+  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 10px;margin-bottom:12px">';
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<button '+navBtn+' onclick="navTimelinePrep(\''+containerId+'\','+pazId+',-1)">←</button>'
+    +'<div style="font-weight:700;font-size:14px;text-align:center">'+MONTHS[m]+' '+y+'</div>'
+    +'<button '+navBtn+' onclick="navTimelinePrep(\''+containerId+'\','+pazId+',1)">→</button>'
+    +'</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px">';
+  DNAMES.forEach(function(dn,di){
+    html+='<div style="text-align:center;font-size:10px;font-weight:700;color:'+(di===6?'#d32f2f':'var(--text3)')+'">'+dn+'</div>';
+  });
+  html+='</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">';
+  cells.forEach(function(cell,idx){
+    var col=idx%7;
+    var ds=cell.ds;
+    var day=parseInt(ds.split('-')[2],10);
+    var festivo=(col===6)||holidays.has(ds);
+    var isOverflow=cell.ov;
+    var txc=festivo?'#d32f2f':(isOverflow?'var(--text3)':'var(--text1)');
+    var txw=festivo?'700':'500';
+    var isToday=ds===today;
+    var covData=cov[ds];
+    var isBozza=!covData&&bozza[ds];
+    var ellHtml='';
+    if(covData){
+      if(covData.ci===-1){
+        ellHtml='<div style="position:absolute;inset:1px;border-radius:50%;background:rgba(150,150,150,0.15);border:2px dashed #9ca3af"></div>';
+      } else {
+        var color=_TL_COLORS[covData.ci%_TL_COLORS.length];
+        var bg,brdSt;
+        if(covData.stato==='dispensato'){bg=color+'44';brdSt='solid';}
+        else if(covData.stato==='controllato'){bg=color+'20';brdSt='solid';}
+        else{bg='rgba(255,255,255,0.5)';brdSt='dashed';}
+        ellHtml='<div style="position:absolute;inset:1px;border-radius:50%;background:'+bg+';border:2.5px '+brdSt+' '+color+'"></div>';
+      }
+    } else if(isBozza){
+      ellHtml='<div style="position:absolute;inset:1px;border-radius:50%;background:rgba(245,158,11,0.08);border:2.5px dashed #f59e0b"></div>';
+    }
+    var todayDot=isToday?'<span style="width:5px;height:5px;border-radius:50%;background:var(--accent-dark);display:block;margin:1px auto 0;position:relative;z-index:1"></span>':'';
+    html+='<div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:44px">'
+      +ellHtml
+      +'<span style="font-size:9px;font-weight:700;line-height:1.1;position:relative;z-index:1;color:'+txc+'">'+DNAMES[col]+'</span>'
+      +'<span style="font-size:12px;font-weight:'+txw+';line-height:1.2;position:relative;z-index:1;color:'+txc+'">'+day+'</span>'
+      +todayDot
+      +'</div>';
+  });
+  html+='</div>';
+  var hasBozza=Object.keys(bozza).length>0;
+  html+='<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;align-items:center">'
+    +'<span style="font-size:11px;color:var(--text3)">Pieno = dispensato &nbsp;·&nbsp; Bordo = controllato &nbsp;·&nbsp; Tratt. = in prep.</span>';
+  if(hasBozza){
+    html+='<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;margin-left:4px">'
+      +'<span style="width:12px;height:12px;border-radius:50%;background:rgba(245,158,11,0.08);border:2px dashed #f59e0b;display:inline-block"></span>'
+      +'Nuova (bozza)</span>';
+  }
+  html+='</div>';
+  html+='<div style="font-size:10px;color:var(--text3);margin-top:4px">Rosso = domeniche e festivi ticinesi &nbsp;·&nbsp; <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent-dark);vertical-align:middle"></span> = oggi</div>';
+  html+='</div>';
+  el.innerHTML=html;
+}
+
 function calcolaGiorniCoperti(dal, al) {
   var res=[]; var d=new Date(dal+'T12:00:00');
   while(d.toISOString().split('T')[0]<=al) {
@@ -3389,6 +3625,29 @@ function showNuovaPrep() {
   document.getElementById('prep-btn-salva-wrap').innerHTML='';
   aggiornaStatoFirmaPrep();
 
+  // Lotto auto-fill dall'ultimo protocollo con stesso farmaco
+  var _farmaco = document.getElementById('prep-farmaco').value.trim();
+  var _lotto = ultimoLotto(p.id, _farmaco);
+  if (_lotto) {
+    setTimeout(function(){
+      mostraModal(
+        '🔖 Conferma lotto',
+        '<p style="color:var(--text2);margin-bottom:8px">Ultimo lotto utilizzato per <b>'+escHtml(_farmaco)+'</b>:</p>'
+        +'<div style="font-family:var(--mono);font-size:20px;font-weight:700;text-align:center;padding:12px;background:var(--surface2);border-radius:var(--radius-sm);letter-spacing:.05em">'+escHtml(_lotto)+'</div>',
+        '<button class="btn btn-ghost" style="flex:1" onclick="chiudiModal()">No, inserisco manualmente</button>'
+        +'<button class="btn btn-primary" style="flex:1" onclick="chiudiModal();document.getElementById(\'prep-lotto\').value=\''+_lotto.replace(/'/g,"\\'")+'\'">'+'✓ Stesso lotto</button>'
+      );
+    }, 80);
+  }
+
+  // Reset timeline nuova prep (sempre nascosta all'apertura)
+  var _tlSt = _tlGetState('nuovaprep-tl');
+  _tlSt.visible = false;
+  var _tlEl = document.getElementById('nuovaprep-tl');
+  if (_tlEl) _tlEl.style.display = 'none';
+  var _tlBtn = document.getElementById('btn-tl-nuovaprep');
+  if (_tlBtn) _tlBtn.style.background = '';
+
   // Memo terapia futura: visibile se dataDecorrenza <= periodoAl
   var avvisoTF = document.getElementById('prep-avviso-tf');
   if (avvisoTF) {
@@ -3434,18 +3693,20 @@ function aggiornaNGiorni() {
   var ng = calcolaGiorniCoperti(dal,al).length;
   document.getElementById('prep-ngiorni').value = ng;
   aggiornaQtaTotale();
+  aggiornaPrepGiorniGrid();
 }
 function aggiornaPrepGiorniGrid() {
   var dal = document.getElementById('prep-dal').value;
   var al  = document.getElementById('prep-al').value;
   var el  = document.getElementById('prep-giorni-grid');
   if (!el) return;
-  if (!dal||!al||dal>al) { el.innerHTML='<span style="color:var(--text3);font-size:13px">Inserire periodo valido</span>'; return; }
+  if (!dal||!al||dal>al) { el.innerHTML='<span style="color:var(--text3);font-size:13px">Inserire periodo valido</span>'; aggiornaBozzaTimeline(); return; }
   var giorni = calcolaGiorniCoperti(dal,al);
   var today  = todayISO();
   el.innerHTML = giorni.map(function(g){
     return '<div class="giorno-cell'+(g===today?' today':'')+'">'+formatDateShort(g)+'</div>';
   }).join('');
+  aggiornaBozzaTimeline();
 }
 
 function salvaEProsegui() {
@@ -3536,11 +3797,14 @@ async function uploadFotoPrep(base64) {
   }
 }
 
-function salvaPreparazione() {
+async function salvaPreparazione() {
   if (!_fotoPrep) { showToast('Scatta la foto della terapia prima di salvare','error'); return; }
   if (!currentOperatore) { logout(); return; }
   var p = getCP();
   if (!p) return;
+
+  var btn = document.getElementById('prep-salva-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvataggio in corso...'; btn.style.opacity = '0.6'; }
 
   var dal    = document.getElementById('prep-dal').value;
   var al     = document.getElementById('prep-al').value;
@@ -3576,10 +3840,23 @@ function salvaPreparazione() {
   };
 
   DB.protocolli.push(pr);
-  sincronizzaProtocollo(pr);
+
+  // Salva su Firestore e attendi conferma prima di procedere
+  if (FIREBASE_ENABLED && firestoreDB) {
+    try {
+      await firestoreDB.collection('protocolli_metadone').doc(pr.id).set(pr);
+    } catch(e) {
+      DB.protocolli = DB.protocolli.filter(function(x){ return x.id !== pr.id; });
+      if (btn) { btn.disabled = false; btn.textContent = '💾 Salva e prosegui'; btn.style.opacity = ''; }
+      showToast('Errore di salvataggio: ' + firestoreErrorMsg(e), 'error');
+      return;
+    }
+  }
 
   var fotoData = _fotoPrep ? _fotoPrep.data : null;
   _fotoPrep = null;
+  if (btn) btn.textContent = '💾 Salva e prosegui';
+  aggiornaStatoFirmaPrep();
 
   // Modal riepilogo
   mostraModal(
@@ -3645,7 +3922,7 @@ function openProtocolloControllo(protId) {
   setHdrPaziente('ctrl', pz);
 
   // Riepilogo
-  var giorni = (pr.giorniCoperti||[]).map(function(g){ return '<div class="giorno-cell">'+formatDateShort(g)+'</div>'; }).join('');
+  var giorni = buildGiornoPillsHtml(pr.giorniCoperti, pr.stato);
   var pausa = pr.pausa > 0 ? '<div class="info-row"><span class="info-key">Pausa</span><span class="info-val" style="font-family:var(--mono)">'+pr.pausa+' giorno/i per sett.</span></div>' : '';
   document.getElementById('ctrl-riepilogo').innerHTML =
     '<div class="card-title">DATI PROTOCOLLO</div>'+
@@ -3780,7 +4057,7 @@ function salvaControllo() {
   _ctrlPinBuffer = '';
 
   // Modal riepilogo post-controllo
-  var giorni = (pr.giorniCoperti||[]).map(function(g){ return '<div class="giorno-cell">'+formatDateShort(g)+'</div>'; }).join('');
+  var giorni = buildGiornoPillsHtml(pr.giorniCoperti, pr.stato);
   mostraModal(
     '<div style="text-align:center;padding:8px 0 12px">'+
     '<div style="font-size:48px;margin-bottom:8px">✅</div>'+
